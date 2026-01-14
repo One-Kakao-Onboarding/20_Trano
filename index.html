@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kanana - 우리아이 성장지킴이 토리</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Phone Frame -->
+        <div class="phone-frame">
+            <!-- Dynamic Island -->
+            <div class="dynamic-island"></div>
+
+            <!-- Phone Screen Content -->
+            <div class="phone-screen">
+                <!-- Landing Page (Kanana Home) -->
+                <div id="landing-page" class="page active">
+                    <!-- AI Mates Section -->
+                    <div class="ai-mates-section">
+                        <h2 class="section-title">나의 AI 메이트</h2>
+
+                        <div class="my-ai-card">
+                            <div class="nana-avatar"></div>
+                            <div class="ai-card-text">
+                                <p>안녕하세요 👋 저는 카나나에서</p>
+                                <p>민트님의 단짝...</p>
+                                <span class="time-text">나나 · 28분 전</span>
+                            </div>
+                        </div>
+
+                        <h2 class="section-title highlight">추천 AI 메이트</h2>
+
+                        <div class="ai-mates-list">
+                            <!-- Tori - Our AI Mate (Clickable) -->
+                            <div class="ai-mate-card clickable" id="tori-profile">
+                                <div class="ai-avatar">
+                                    <img src="tori.png" alt="토리" class="avatar-img">
+                                </div>
+                                <div class="ai-info">
+                                    <h3>우리아이 </br> 성장지킴이 토리</h3>
+                                    <p>어려운 단어는 쏙쏙! </br> 토리가 부모님의 </br> 마음을 아이에게 </br>이어드릴게요.</p>
+                                </div>
+                                <button class="chat-btn">대화</button>
+                            </div>
+
+                            <!-- Other AI Mates -->
+                            <div class="ai-mate-card disabled">
+                                <div class="ai-avatar">
+                                    <img src="ai1.png" alt="사주보는 카도사" class="avatar-img">
+                                </div>
+                                <div class="ai-info">
+                                    <h3>사주보는 카도사</h3>
+                                    <p>소름 돋게 정확한 사주 풀이를 시작하겠니.</p>
+                                </div>
+                                <button class="chat-btn">대화</button>
+                            </div>
+
+                            <div class="ai-mate-card disabled">
+                                <div class="new-badge">NEW</div>
+                                <div class="ai-avatar">
+                                    <img src="ai2.png" alt="하루 한 장 AI 이슈" class="avatar-img">
+                                </div>
+                                <div class="ai-info">
+                                    <h3>하루 한 장, AI 이슈 ...</h3>
+                                    <p>AI 이슈, 매일 아침 간편하게 받아보세요!</p>
+                                </div>
+                                <button class="chat-btn">대화</button>
+                            </div>
+
+                            <div class="ai-mate-card disabled">
+                                <div class="new-badge">NEW</div>
+                                <div class="ai-avatar">
+                                    <img src="ai3.png" alt="스피드 오토케어" class="avatar-img">
+                                </div>
+                                <div class="ai-info">
+                                    <h3>스피드 오토케어</h3>
+                                    <p>낯설고 어려운 차량 관리, 함께 시작해요!</p>
+                                </div>
+                                <button class="chat-btn">대화</button>
+                            </div>
+
+                            <div class="ai-mate-card disabled">
+                                <div class="ai-avatar">
+                                    <img src="ai4.png" alt="스터디 코칭" class="avatar-img">
+                                </div>
+                                <div class="ai-info">
+                                    <h3>스터디 코칭</h3>
+                                    <p>무료 합숙성적검사와 스터디 코칭을 받아보...</p>
+                                </div>
+                                <button class="chat-btn">대화</button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Chat Room Page -->
+                <div id="chat-room-page" class="page">
+                    <!-- Chat Header -->
+                    <div class="chat-header">
+                        <button class="back-btn" id="back-button">‹</button>
+                        <h2 class="chat-title">토리</h2>
+                        <button class="menu-btn">☰</button>
+                    </div>
+
+                    <!-- Tori Profile -->
+                    <div class="tori-profile-section">
+                        <div class="profile-avatar-large">
+                            <img src="tori.png" alt="토리" class="profile-img">
+                        </div>
+                        <h3 class="profile-name">우리아이 성장지킴이 토리</h3>
+                        <p class="profile-description">어려운 단어는 쏙쏙! 토리가 부모님의 마음을 </br> 아이에게 이어드릴게요.</p>
+                        <div class="profile-tags">
+                            <span class="profile-tag">발달장애인 부모 지원</span>
+                            <span class="profile-tag">유아 발달 추적</span>
+                            <span class="profile-tag">병원 진료 안내</span>
+                        </div>
+                    </div>
+
+                    <!-- Empty Chat Area -->
+                    <div class="empty-chat-area" id="start-survey-trigger">
+                        <p class="empty-chat-text">토리와 대화를 시작하려면 화면을 터치해주세요! 💬</p>
+                    </div>
+
+                </div>
+
+                <!-- Survey Page -->
+                <div id="survey-page" class="page">
+                    <!-- Survey Header -->
+                    <div class="survey-header">
+                        <div class="tori-face-small">
+                            <img src="tori.png" alt="토리" class="tori-face-img">
+                        </div>
+                    </div>
+
+                    <!-- Question Bubble -->
+                    <div class="question-bubble">
+                        <p id="question-text" class="question-text"></p>
+                    </div>
+
+                    <!-- Question Image -->
+                    <div class="question-image-container">
+                        <img id="question-image" src="" alt="질문 이미지" class="question-image">
+                    </div>
+
+                    <!-- Answer Buttons -->
+                    <div class="answer-buttons">
+                        <button class="answer-btn x-btn" id="x-btn">✕<br><span>아니요</span></button>
+                        <button class="answer-btn o-btn" id="o-btn">○<br><span>네</span></button>
+                    </div>
+
+                    <!-- Progress Indicator -->
+                    <div class="progress-indicator">
+                        <span id="progress-text">1 / 4</span>
+                    </div>
+                </div>
+
+                <!-- Result Page -->
+                <div id="result-page" class="page">
+                    <div class="result-container">
+                        <div class="result-header">
+                            <div class="tori-face-large">
+                                <img src="tori.png" alt="토리" class="tori-face-img">
+                            </div>
+                            <h2 class="result-title">설문 완료!</h2>
+                        </div>
+
+                        <div class="result-content">
+                            <div class="result-score">
+                                <p class="score-label">정답 개수</p>
+                                <p class="score-number"><span id="correct-count">0</span> / 4</p>
+                            </div>
+
+                            <div class="result-message">
+                                <p id="result-message-text"></p>
+                            </div>
+
+                            <div class="result-detail">
+                                <h3>답변 결과</h3>
+                                <div id="answer-details"></div>
+                            </div>
+
+                            <button class="restart-btn" id="restart-btn">처음으로 돌아가기</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

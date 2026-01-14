@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(open:*)",
+      "Bash(sips -g pixelWidth -g pixelHeight:*)",
+      "Bash(sips:*)"
+    ]
+  }
+}
