@@ -2,7 +2,11 @@ import { supabase } from '../_lib/supabase.js';
 
 /**
  * GET /api/questions
- * 모든 설문 질문을 순서대로 조회합니다.
+ * 설문 질문을 조회합니다.
+ *
+ * Query Parameters:
+ *   - age: 대상 아이 개월수 (예: 12, 24, 36)
+ *   - category: 발달 영역 (예: 언어, 인지, 사회성, 운동)
  */
 export default async function handler(req, res) {
   // CORS 헤더 설정
@@ -10,7 +14,6 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  // OPTIONS 요청 처리 (CORS preflight)
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
@@ -23,10 +26,24 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { data, error } = await supabase
+    const { age, category } = req.query;
+
+    // 쿼리 빌드
+    let query = supabase
       .from('questions')
       .select('*')
-      .order('question_order', { ascending: true });
+      .order('target_age_months', { ascending: true })
+      .order('category', { ascending: true });
+
+    // 필터 적용
+    if (age) {
+      query = query.eq('target_age_months', parseInt(age, 10));
+    }
+    if (category) {
+      query = query.eq('category', category);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       throw error;
@@ -35,16 +52,15 @@ export default async function handler(req, res) {
     // snake_case → camelCase 변환
     const questions = data.map((q) => ({
       id: q.id,
-      questionOrder: q.question_order,
-      originalText: q.original_text,
-      easyText: q.easy_text,
-      imageFilename: q.image_filename,
-      correctAnswer: q.correct_answer,
-      category: q.category
+      category: q.category,
+      questionText: q.question_text,
+      targetAgeMonths: q.target_age_months,
+      createdAt: q.created_at
     }));
 
     return res.status(200).json({
       success: true,
+      count: questions.length,
       data: questions
     });
   } catch (error) {

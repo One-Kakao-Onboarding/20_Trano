@@ -6,18 +6,24 @@
 -- 1. questions 테이블: 설문 질문 저장
 CREATE TABLE IF NOT EXISTS questions (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-    question_order INTEGER NOT NULL,
-    original_text TEXT NOT NULL,
-    easy_text TEXT,
-    image_filename VARCHAR(255) NOT NULL,
-    correct_answer VARCHAR(1) NOT NULL CHECK (correct_answer IN ('o', 'x')),
-    category VARCHAR(100),
+
+    -- 발달 영역 (언어, 인지, 사회성, 운동 등)
+    category VARCHAR(50) NOT NULL,
+
+    -- 설문 내용 (원본 텍스트)
+    question_text TEXT NOT NULL,
+
+    -- 대상 아이 개월수 (12, 24, 36 등)
+    target_age_months INTEGER NOT NULL,
+
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 질문 순서 인덱스
-CREATE INDEX IF NOT EXISTS idx_questions_order ON questions(question_order);
+-- 인덱스: 개월수와 카테고리로 자주 조회
+CREATE INDEX IF NOT EXISTS idx_questions_age ON questions(target_age_months);
+CREATE INDEX IF NOT EXISTS idx_questions_category ON questions(category);
+CREATE INDEX IF NOT EXISTS idx_questions_age_category ON questions(target_age_months, category);
 
 -- 2. easy_text_cache 테이블: GPT 변환 결과 캐싱
 CREATE TABLE IF NOT EXISTS easy_text_cache (
@@ -50,7 +56,6 @@ CREATE POLICY "Allow public read on questions" ON questions
 -- easy_text_cache 테이블: 서버만 접근 (service_role key 사용)
 ALTER TABLE easy_text_cache ENABLE ROW LEVEL SECURITY;
 
--- 서비스 역할은 모든 작업 허용 (API 서버에서 service_role key 사용)
 CREATE POLICY "Allow service role full access on easy_text_cache" ON easy_text_cache
     FOR ALL USING (true);
 
