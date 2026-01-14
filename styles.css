@@ -827,3 +827,231 @@ body {
 .empty-chat-area:hover {
     background: rgba(254, 229, 0, 0.1);
 }
+
+/* ========== Info Page ========== */
+#info-page {
+    background: white;
+    padding: 20px;
+}
+
+.info-container {
+    padding-top: 60px;
+}
+
+.info-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.info-title {
+    font-size: 22px;
+    font-weight: 800;
+    margin: 15px 0 5px;
+}
+
+.info-subtitle {
+    font-size: 14px;
+    color: #666;
+}
+
+.info-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-group label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #333;
+}
+
+.input-group input {
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    font-size: 16px;
+}
+
+.gender-selection {
+    display: flex;
+    gap: 10px;
+}
+
+.gender-btn {
+    flex: 1;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 12px;
+    background: white;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+}
+
+.gender-btn.selected {
+    background: #FEE500;
+    border-color: #FEE500;
+    color: #000;
+}
+
+.submit-info-btn {
+    margin-top: 20px;
+    padding: 18px;
+    background: #1a1a1a;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.info-next-btn {
+    width: 100%;
+    padding: 15px;
+    color: white;
+    border: none;
+    border-radius: 15px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+/* ========== Custom Modal ========== */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: none;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000;
+}
+
+.modal-content {
+  background: linear-gradient(145deg, #ffffff, #f8f9fa);
+  padding: 36px 32px;
+  border-radius: 24px;
+  text-align: center;
+  width: 85%;
+  max-width: 320px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  animation: modalPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes modalPop {
+  from {
+    transform: scale(0.9) translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  display: inline-block;
+  animation: iconBounce 0.6s ease-out 0.2s both;
+}
+
+@keyframes iconBounce {
+  0% {
+    transform: scale(0);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+#modal-close-btn {
+  margin-top: 24px;
+  width: 100%;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, #fee500 0%, #ffd600 100%);
+  border: none;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a1a;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 14px rgba(254, 229, 0, 0.4);
+}
+
+#modal-close-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(254, 229, 0, 0.5);
+}
+
+#modal-close-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(254, 229, 0, 0.4);
+}
+
+
+/* ========== Loading Page & Acorn Animation ========== */
+#loading-page {
+    background: #FFF9E6;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.loading-container { text-align: center; }
+
+.basket-animation {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 30px;
+}
+
+.basket {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    height: 50px;
+    background: #8B4513;
+    border-radius: 0 0 40px 40px;
+    border: 4px solid #5D2E0A;
+}
+
+.acorn {
+    position: absolute;
+    font-size: 24px;
+    top: -40px;
+    opacity: 0;
+    animation: dropAcorn 1.5s infinite;
+}
+
+.acorn-1 { left: 10%; animation-delay: 0s; }
+.acorn-2 { left: 40%; animation-delay: 0.5s; }
+.acorn-3 { left: 70%; animation-delay: 1s; }
+
+@keyframes dropAcorn {
+    0% { transform: translateY(0); opacity: 0; }
+    30% { opacity: 1; }
+    70% { transform: translateY(80px); opacity: 1; }
+    100% { transform: translateY(80px); opacity: 0; }
+}
+
+.loading-text { padding: 0 20px; }
+.loading-main-msg { font-size: 18px; font-weight: 700; color: #333; margin-bottom: 10px; }
+.loading-sub-msg { font-size: 13px; color: #777; line-height: 1.5; word-break: keep-all; }
