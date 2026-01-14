@@ -45,26 +45,52 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { age, category } = req.query;
+    const { age, category, limit } = req.query;
+    const limitPerCategory = limit ? parseInt(limit, 10) : null;
 
-    // 1. 질문 조회 (필터 적용)
-    let query = supabase
-      .from('questions')
-      .select('*')
-      .order('target_age_months', { ascending: true })
-      .order('category', { ascending: true });
+    let questions = [];
 
-    if (age) {
-      query = query.eq('target_age_months', parseInt(age, 10));
-    }
-    if (category) {
-      query = query.eq('category', category);
-    }
+    // limit 파라미터가 있으면 각 영역별로 N개씩 가져오기
+    if (age && limitPerCategory && !category) {
+      const categories = ['gross_motor', 'fine_motor', 'cognition', 'language', 'social'];
 
-    const { data: questions, error: questionsError } = await query;
+      for (const cat of categories) {
+        const { data, error } = await supabase
+          .from('questions')
+          .select('*')
+          .eq('target_age_months', parseInt(age, 10))
+          .eq('category', cat)
+          .limit(limitPerCategory);
 
-    if (questionsError) {
-      throw questionsError;
+        if (error) {
+          console.warn(`Category ${cat} fetch warning:`, error);
+          continue;
+        }
+        if (data) {
+          questions.push(...data);
+        }
+      }
+    } else {
+      // 기존 로직: 일반 조회
+      let query = supabase
+        .from('questions')
+        .select('*')
+        .order('target_age_months', { ascending: true })
+        .order('category', { ascending: true });
+
+      if (age) {
+        query = query.eq('target_age_months', parseInt(age, 10));
+      }
+      if (category) {
+        query = query.eq('category', category);
+      }
+
+      const { data, error: questionsError } = await query;
+
+      if (questionsError) {
+        throw questionsError;
+      }
+      questions = data || [];
     }
 
     if (questions.length === 0) {
