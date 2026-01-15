@@ -15,6 +15,7 @@ const __dirname = dirname(__filename);
 const { default: questionsHandler } = await import('./api/questions/index.js');
 const { default: easyHandler } = await import('./api/questions/easy.js');
 const { default: ogImageHandler } = await import('./api/og-image.js');
+const { default: hospitalsHandler } = await import('./api/hospitals/nearby.js');
 
 const PORT = 3000;
 
@@ -74,6 +75,8 @@ const server = http.createServer(async (req, res) => {
       await easyHandler(req, res);
     } else if (url.pathname === '/api/og-image' && req.method === 'GET') {
       await ogImageHandler(req, res);
+    } else if (url.pathname === '/api/hospitals/nearby' && req.method === 'GET') {
+      await hospitalsHandler(req, res);
     }
     // 정적 파일 서빙
     else {

@@ -737,12 +737,12 @@ body {
         rgba(255, 230, 240, 0.5) 50%,
         rgba(255, 255, 255, 1) 100%
     );
-    overflow: hidden;
+    overflow-y: auto;
 }
 
 .result-container {
     padding: 60px 20px 30px;
-    height: 100%;
+    min-height: 100%;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
@@ -988,6 +988,120 @@ body {
     color: #333;
     text-align: center;
     margin: 0;
+}
+
+.product-category {
+    font-size: 11px;
+    color: #999;
+    margin-top: 4px;
+}
+
+/* 소아과 검색 섹션 */
+.hospital-search-section {
+    text-align: center;
+    padding: 10px 0;
+}
+
+.hospital-search-section h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: #ff4444;
+    margin-bottom: 8px;
+}
+
+.hospital-search-desc {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+.hospital-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.hospital-loading {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+.hospital-error {
+    text-align: center;
+    color: #999;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.hospital-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 12px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+
+.hospital-card:hover {
+    background: #e9ecef;
+    transform: translateX(4px);
+}
+
+.hospital-info {
+    text-align: left;
+    flex: 1;
+}
+
+.hospital-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: #333;
+    margin: 0 0 4px 0;
+}
+
+.hospital-address {
+    font-size: 12px;
+    color: #666;
+    margin: 0 0 2px 0;
+}
+
+.hospital-phone {
+    font-size: 13px;
+    color: #ff4444;
+    font-weight: 600;
+    margin: 0;
+}
+
+.hospital-distance {
+    font-size: 12px;
+    color: #999;
+    white-space: nowrap;
+    margin-left: 10px;
+}
+
+.hospital-search-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 24px;
+    border-radius: 12px;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 600;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.hospital-search-btn:hover {
+    transform: translateY(-2px);
+}
+
+.hospital-search-btn.kakao {
+    background: #FEE500;
+    color: #191919;
+    box-shadow: 0 4px 12px rgba(254, 229, 0, 0.3);
 }
 
 .restart-btn {

@@ -372,7 +372,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let resultTitle = '';
             let resultMessage = '';
             let resultStyle = '';
-            let weakestCategory = null;
+            let weakestCategories = [];
 
             if (criticalYesCount > 0) {
                 // Critical 질문에 하나라도 O가 있으면 위험
@@ -408,30 +408,52 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 console.log('카테고리별 점수:', categoryScores);
 
-                // 가장 낮은 카테고리 찾기
+                // 가장 낮은 카테고리 찾기 (2-pass: 같은 비율의 모든 카테고리 수집)
                 let lowestRatio = 1;
+
+                // 1차: 가장 낮은 비율 찾기
                 for (const [cat, score] of Object.entries(categoryScores)) {
                     if (score.total > 0) {
                         const ratio = score.yes / score.total;
                         if (ratio < lowestRatio) {
                             lowestRatio = ratio;
-                            weakestCategory = cat;
                         }
                     }
                 }
 
-                // 카테고리별 맞춤 피드백 - 4가지 유형 (쉬운 표현)
-                const categoryFeedbacks = {
-                    'motor': '아이가 몸을 움직이는 것을 조금 어려워해요.',
-                    'cognition': '아이가 생각하는 것을 조금 어려워해요.',
-                    'language': '아이가 말하는 것을 조금 어려워해요.',
-                    'social': '아이가 친구들과 노는 것을 조금 어려워해요.'
+                // 2차: 가장 낮은 비율과 같은 모든 카테고리 수집
+                for (const [cat, score] of Object.entries(categoryScores)) {
+                    if (score.total > 0) {
+                        const ratio = score.yes / score.total;
+                        if (ratio === lowestRatio) {
+                            weakestCategories.push(cat);
+                        }
+                    }
+                }
+
+                // 카테고리별 한글 표현 (문장 조합용)
+                const categoryPhrases = {
+                    'motor': '몸을 움직이는 것',
+                    'cognition': '생각하는 것',
+                    'language': '말하는 것',
+                    'social': '친구들과 노는 것'
                 };
 
-                console.log('가장 약한 카테고리:', weakestCategory, '비율:', lowestRatio);
-                resultMessage = weakestCategory
-                    ? categoryFeedbacks[weakestCategory] + '\n\n두 달 후에 토리가 다시 찾아올게요.'
-                    : '아이의 성장이 조금 느려요!\n두 달 후에 토리가 다시 찾아올게요.';
+                console.log('가장 약한 카테고리:', weakestCategories, '비율:', lowestRatio);
+
+                // 메시지 생성
+                if (weakestCategories.length === 1) {
+                    // 1개: "아이가 몸을 움직이는 것을 조금 어려워해요."
+                    resultMessage = `아이가 ${categoryPhrases[weakestCategories[0]]}을 조금 어려워해요.`;
+                } else if (weakestCategories.length > 1) {
+                    // 여러 개: "아이가 몸을 움직이는 것과 말하는 것을 조금 어려워해요."
+                    const phrases = weakestCategories.map(cat => categoryPhrases[cat]);
+                    const combined = phrases.slice(0, -1).join(', ') + '과 ' + phrases.slice(-1);
+                    resultMessage = `아이가 ${combined}을 조금 어려워해요.`;
+                } else {
+                    resultMessage = '아이의 성장이 조금 느려요!';
+                }
+                resultMessage += '\n\n두 달 후에 토리가 다시 찾아올게요.';
             } else {
                 // 일반 질문 중 O가 6개 이상이면 안심
                 resultType = 'normal';
@@ -470,29 +492,47 @@ document.addEventListener('DOMContentLoaded', () => {
                 resultDetailElement.style.display = 'none';
             }
 
+            // result-content 요소 가져오기
+            const resultContentElement = document.querySelector('.result-content');
+
             // "주의" 상태일 때만 제품 추천 표시
-            if (resultType === 'warning' && resultDetailElement && weakestCategory) {
+            if (resultType === 'warning' && resultDetailElement && weakestCategories.length > 0) {
+                // 주의일 때는 flex: 1로 공간 채우기
+                if (resultContentElement) {
+                    resultContentElement.style.flex = '1';
+                }
                 // 제품 추천 표시 (타이핑 효과 후 표시)
                 const typingDelay = resultTitle.length * 100 + resultMessage.length * 50 + 500;
                 setTimeout(() => {
-                    if (productRecommendations[weakestCategory]) {
-                        // 카테고리 한글명
-                        const categoryDisplayNames = {
-                            'motor': '근육',
-                            'cognition': '인지',
-                            'language': '언어',
-                            'social': '사회성'
-                        };
+                    // 카테고리 한글명
+                    const categoryDisplayNames = {
+                        'motor': '근육',
+                        'cognition': '인지',
+                        'language': '언어',
+                        'social': '사회성'
+                    };
 
+                    // 각 카테고리에서 첫 번째 제품만 선택
+                    const selectedProducts = [];
+                    weakestCategories.forEach(cat => {
+                        if (productRecommendations[cat] && productRecommendations[cat].length > 0) {
+                            selectedProducts.push({
+                                ...productRecommendations[cat][0],
+                                category: categoryDisplayNames[cat]
+                            });
+                        }
+                    });
+
+                    if (selectedProducts.length > 0) {
                         resultDetailElement.style.display = 'block';
                         resultDetailElement.innerHTML = `
                             <h3>아이의 성장을 도울 제품을 추천해요!</h3>
-                            <p style="font-size: 14px; color: #666; margin-bottom: 10px;">${categoryDisplayNames[weakestCategory]} 발달을 위한 추천</p>
                             <div class="product-grid">
-                                ${productRecommendations[weakestCategory].map(product => `
+                                ${selectedProducts.map(product => `
                                     <a href="${product.link}" target="_blank" class="product-card">
                                         <img src="${product.image}" alt="${product.name}" class="product-image">
                                         <p class="product-name">${product.name}</p>
+                                        <span class="product-category">${product.category}</span>
                                     </a>
                                 `).join('')}
                             </div>
@@ -501,12 +541,152 @@ document.addEventListener('DOMContentLoaded', () => {
                         resultDetailElement.style.display = 'none';
                     }
                 }, typingDelay);
+            } else if (resultType === 'normal' && resultDetailElement) {
+                // 안심일 때는 랜덤으로 3개 제품 추천
+                if (resultContentElement) {
+                    resultContentElement.style.flex = '1';
+                }
+
+                const typingDelay = resultTitle.length * 100 + resultMessage.length * 50 + 500;
+                setTimeout(() => {
+                    const categoryDisplayNames = {
+                        'motor': '근육',
+                        'cognition': '인지',
+                        'language': '언어',
+                        'social': '사회성'
+                    };
+
+                    // 모든 제품을 하나의 배열로 합치기
+                    const allProducts = [];
+                    Object.entries(productRecommendations).forEach(([cat, products]) => {
+                        products.forEach(product => {
+                            allProducts.push({
+                                ...product,
+                                category: categoryDisplayNames[cat]
+                            });
+                        });
+                    });
+
+                    // 랜덤으로 3개 선택
+                    const shuffled = allProducts.sort(() => Math.random() - 0.5);
+                    const randomProducts = shuffled.slice(0, 3);
+
+                    if (randomProducts.length > 0) {
+                        resultDetailElement.style.display = 'block';
+                        resultDetailElement.innerHTML = `
+                            <h3>아이에게 선물해보세요!</h3>
+                            <div class="product-grid">
+                                ${randomProducts.map(product => `
+                                    <a href="${product.link}" target="_blank" class="product-card">
+                                        <img src="${product.image}" alt="${product.name}" class="product-image">
+                                        <p class="product-name">${product.name}</p>
+                                        <span class="product-category">${product.category}</span>
+                                    </a>
+                                `).join('')}
+                            </div>
+                        `;
+                    }
+                }, typingDelay);
+            } else if (resultType === 'critical' && resultDetailElement) {
+                // 위험일 때 주변 소아과 검색
+                if (resultContentElement) {
+                    resultContentElement.style.flex = '1';
+                }
+
+                const typingDelay = resultTitle.length * 100 + resultMessage.length * 50 + 500;
+                setTimeout(() => {
+                    resultDetailElement.style.display = 'block';
+
+                    // 용인시 수지구 동천로 기준 가까운 소아과
+                    const nearbyHospitals = [
+                        {
+                            name: '동천아이들소아청소년과의원',
+                            address: '용인시 수지구 동천동 887-5',
+                            phone: '031-263-5500',
+                            url: 'https://map.kakao.com/link/map/동천아이들소아청소년과의원,37.3378,127.1089'
+                        },
+                        {
+                            name: '수지삼성소아청소년과의원',
+                            address: '용인시 수지구 동천동 851',
+                            phone: '031-262-8275',
+                            url: 'https://map.kakao.com/link/map/수지삼성소아청소년과의원,37.3365,127.1052'
+                        },
+                        {
+                            name: '동천연세소아청소년과의원',
+                            address: '용인시 수지구 동천동 868',
+                            phone: '031-264-8582',
+                            url: 'https://map.kakao.com/link/map/동천연세소아청소년과의원,37.3371,127.1075'
+                        }
+                    ];
+
+                    resultDetailElement.innerHTML = `
+                        <div class="hospital-search-section">
+                            <h3>가까운 소아과</h3>
+                            <p class="hospital-search-desc">전문의 상담이 필요해요</p>
+                            <div class="hospital-list">
+                                ${nearbyHospitals.map(hospital => `
+                                    <a href="${hospital.url}" target="_blank" class="hospital-card">
+                                        <div class="hospital-info">
+                                            <h4 class="hospital-name">${hospital.name}</h4>
+                                            <p class="hospital-address">${hospital.address}</p>
+                                            <p class="hospital-phone">${hospital.phone}</p>
+                                        </div>
+                                    </a>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }, typingDelay);
             } else {
+                // 기타 상태
+                if (resultContentElement) {
+                    resultContentElement.style.flex = 'none';
+                }
                 if (resultDetailElement) {
                     resultDetailElement.style.display = 'none';
                 }
             }
         }
+    }
+
+    // 위치 기반 카카오맵 열기
+    function openKakaoMapWithLocation() {
+        const btn = document.getElementById('find-hospital-btn');
+        if (btn) {
+            btn.innerHTML = '<span>위치를 확인하고 있어요...</span>';
+            btn.disabled = true;
+        }
+
+        if (!navigator.geolocation) {
+            // 위치 서비스 미지원 시 일반 검색으로
+            window.open('https://map.kakao.com/?q=소아과', '_blank');
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                // 카카오맵 좌표 기반 검색 URL
+                const kakaoMapUrl = `https://map.kakao.com/?q=소아과&x=${longitude}&y=${latitude}`;
+                window.open(kakaoMapUrl, '_blank');
+
+                if (btn) {
+                    btn.innerHTML = '<span>내 주변 소아과 찾기</span>';
+                    btn.disabled = false;
+                }
+            },
+            (error) => {
+                console.error('위치 오류:', error);
+                // 위치 가져오기 실패 시 일반 검색으로
+                window.open('https://map.kakao.com/?q=소아과', '_blank');
+
+                if (btn) {
+                    btn.innerHTML = '<span>내 주변 소아과 찾기</span>';
+                    btn.disabled = false;
+                }
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
     }
 
     // OG 이미지 로드 함수
