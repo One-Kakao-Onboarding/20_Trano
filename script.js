@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Page navigation elements
     const landingPage = document.getElementById('landing-page');
     const chatRoomPage = document.getElementById('chat-room-page');
+    const parentSurveyIntroPage = document.getElementById('parent-survey-intro-page');
     const surveyPage = document.getElementById('survey-page');
     const resultPage = document.getElementById('result-page');
     const infoPage = document.getElementById('info-page'); // 추가됨
@@ -54,6 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const goToInfoBtn = document.getElementById('go-to-info-btn');
     const submitInfoBtn = document.getElementById('submit-info-btn');
     const restartBtn = document.getElementById('restart-btn');
+    const startParentSurveyBtn = document.getElementById('start-parent-survey-btn');
     const genderBtns = document.querySelectorAll('.gender-btn');
 
     const loadingPage = document.getElementById('loading-page');
@@ -124,6 +126,211 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentQuestionIndex = 0;
     let userAnswers = [];
 
+    // TTS 발현 여부 (부모 설문 결과에 따라 결정)
+    let enableTTS = false;
+
+    /**
+     * 부모 설문 결과를 기반으로 TTS 발현 여부 판단
+     * @param {Array} answers - userAnswers 배열
+     * @returns {boolean} - TTS 발현 여부
+     */
+    function shouldEnableTTS(answers) {
+        // 오답 문항 번호 추출 (1-based index)
+        const wrongQuestions = answers
+            .map((answer, index) => (!answer.isCorrect ? index + 1 : null))
+            .filter(q => q !== null);
+
+        const wrongSet = new Set(wrongQuestions);
+        const wrongCount = wrongQuestions.length;
+
+        // TTS 발현 조건 체크
+        const ttsPatterns = [
+            // 2개 틀림
+            [1, 3], [1, 4], [2, 3], [2, 4],
+            // 3개 틀림
+            [1, 2, 3], [1, 2, 4], [1, 3, 4], [2, 3, 4],
+            // 4개 틀림
+            [1, 2, 3, 4]
+        ];
+
+        // 패턴 매칭
+        for (const pattern of ttsPatterns) {
+            if (pattern.length === wrongCount) {
+                const isMatch = pattern.every(q => wrongSet.has(q));
+                if (isMatch) {
+                    console.log(`✅ TTS 발현 조건 충족: 문항 ${pattern.join(', ')} 오답`);
+                    return true;
+                }
+            }
+        }
+
+        console.log(`❌ TTS 발현 조건 미충족: 오답 문항 ${wrongQuestions.join(', ')}`);
+        return false;
+    }
+
+    // 현재 실행 중인 TTS 제어 변수
+    let currentTTSController = null;
+
+    /**
+     * TTS를 완전히 중지하는 함수
+     */
+    function stopTTS() {
+        // 컨트롤러가 있으면 중단
+        if (currentTTSController) {
+            currentTTSController.abort = true;
+        }
+
+        // 음성 합성 중지
+        if (window.speechSynthesis.speaking) {
+            window.speechSynthesis.cancel();
+        }
+
+        // 토리 애니메이션 중지
+        toggleToriSpeakingAnimation(false);
+
+        console.log('✋ TTS 중지됨');
+    }
+
+    /**
+     * TTS로 텍스트를 읽어주는 함수
+     * @param {string} text - 읽어줄 텍스트
+     * @returns {Promise} - TTS 완료를 알리는 Promise
+     */
+    function speakText(text) {
+        return new Promise((resolve, reject) => {
+            if (!('speechSynthesis' in window)) {
+                console.warn('TTS not supported');
+                resolve();
+                return;
+            }
+
+            // 기존 음성 중지
+            window.speechSynthesis.cancel();
+
+            // 컨트롤러 객체 생성
+            const controller = { abort: false };
+            currentTTSController = controller;
+
+            // 짧은 딜레이 후 음성 시작 (cancel 처리를 위해)
+            setTimeout(() => {
+                // 중단 요청이 있었으면 실행하지 않음
+                if (controller.abort) {
+                    resolve();
+                    return;
+                }
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ko-KR';
+                utterance.rate = 0.9; // 읽는 속도 (0.1 ~ 10)
+                utterance.pitch = 1.0; // 음높이 (0 ~ 2)
+                utterance.volume = 1.0; // 볼륨 (0 ~ 1)
+
+                utterance.onend = () => {
+                    if (!controller.abort) {
+                        console.log('TTS 완료');
+                    }
+                    resolve();
+                };
+
+                utterance.onerror = (event) => {
+                    console.error('TTS 에러:', event);
+                    resolve(); // 에러가 나도 계속 진행
+                };
+
+                window.speechSynthesis.speak(utterance);
+            }, 50);
+        });
+    }
+
+    /**
+     * 토리 이미지에 말하는 애니메이션 추가/제거
+     * @param {boolean} isActive - 애니메이션 활성화 여부
+     */
+    function toggleToriSpeakingAnimation(isActive) {
+        // 설문 페이지 토리
+        const surveyTori = document.getElementById('survey-tori');
+        if (surveyTori) {
+            if (isActive) {
+                surveyTori.classList.add('speaking');
+            } else {
+                surveyTori.classList.remove('speaking');
+            }
+        }
+
+        // 결과 페이지 토리
+        const resultTori = document.querySelector('.tori-face-large');
+        if (resultTori) {
+            if (isActive) {
+                resultTori.classList.add('speaking');
+            } else {
+                resultTori.classList.remove('speaking');
+            }
+        }
+    }
+
+    /**
+     * 아이 설문 질문을 TTS로 읽어주는 함수
+     * @param {string} questionText - 질문 텍스트
+     */
+    async function readQuestionWithTTS(questionText) {
+        if (!enableTTS) return;
+
+        try {
+            // 토리 애니메이션 시작
+            toggleToriSpeakingAnimation(true);
+
+            // 질문 텍스트 읽기
+            await speakText(questionText);
+
+            // 중단 요청 확인
+            if (currentTTSController && currentTTSController.abort) {
+                toggleToriSpeakingAnimation(false);
+                return;
+            }
+
+            // 버튼 안내 멘트 읽기
+            await speakText('아니오 버튼은 왼쪽, 네 버튼은 오른쪽에 있습니다');
+
+            // 토리 애니메이션 종료
+            toggleToriSpeakingAnimation(false);
+        } catch (error) {
+            console.error('TTS 실행 중 오류:', error);
+            toggleToriSpeakingAnimation(false);
+        }
+    }
+
+    /**
+     * 결과 페이지를 TTS로 읽어주는 함수
+     * @param {string} resultTitle - 결과 제목 (위험/주의/안심)
+     * @param {string} resultMessage - 결과 메시지
+     */
+    async function readResultWithTTS(resultTitle, resultMessage) {
+        if (!enableTTS) return;
+
+        try {
+            // 토리 애니메이션 시작
+            toggleToriSpeakingAnimation(true);
+
+            // 결과 제목 읽기
+            await speakText(resultTitle);
+
+            // 중단 요청 확인
+            if (currentTTSController && currentTTSController.abort) {
+                toggleToriSpeakingAnimation(false);
+                return;
+            }
+
+            // 결과 메시지 읽기
+            await speakText(resultMessage);
+
+            // 토리 애니메이션 종료
+            toggleToriSpeakingAnimation(false);
+        } catch (error) {
+            console.error('TTS 실행 중 오류:', error);
+            toggleToriSpeakingAnimation(false);
+        }
+    }
+
     // 카테고리별 제품 추천 데이터 (result.md 기반)
     const productRecommendations = {
         'motor': [
@@ -157,6 +364,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (startSurveyTrigger) {
         startSurveyTrigger.addEventListener('click', () => {
+            // 부모 설문 안내 페이지로 이동
+            chatRoomPage.classList.remove('active');
+            parentSurveyIntroPage.classList.add('active');
+        });
+    }
+
+    if (startParentSurveyBtn) {
+        startParentSurveyBtn.addEventListener('click', () => {
             startSurvey();
         });
     }
@@ -166,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
         surveyQuestions = [...BASIC_SURVEY_QUESTIONS];  // 기본 질문으로 복원
         currentQuestionIndex = 0;
         userAnswers = [];
-        chatRoomPage.classList.remove('active');
+        parentSurveyIntroPage.classList.remove('active');
         surveyPage.classList.add('active');
         showQuestion(currentQuestionIndex);
     }
@@ -175,13 +390,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const question = surveyQuestions[index];
         questionText.textContent = question.question;
 
+        // 말풍선 스타일 변경
+        const questionBubble = document.querySelector('.question-bubble');
+        if (questionBubble) {
+            if (surveyType === 'basic') {
+                // 부모 설문: 큰 말풍선 + 이미지 포함
+                questionBubble.className = 'question-bubble question-bubble-with-image';
+            } else {
+                // 발달 검사: 기본 말풍선 (토리 이미지 표시)
+                questionBubble.className = 'question-bubble question-bubble-large';
+            }
+        }
+
         // 기본 설문은 이미지 표시, 발달 검사는 이미지 숨김
-        if (questionImage) {
+        const imageWrapper = document.querySelector('.question-image-wrapper');
+        if (questionImage && imageWrapper) {
             if (surveyType === 'basic' && question.image) {
                 questionImage.src = question.image;
-                questionImage.style.display = 'block';
+                imageWrapper.style.display = 'flex';
             } else {
-                questionImage.style.display = 'none';
+                imageWrapper.style.display = 'none';
             }
         }
 
@@ -193,6 +421,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         progressText.textContent = `${index + 1} / ${surveyQuestions.length}`;
         updatePrevButtonVisibility();
+
+        // 발달검사일 때 TTS 실행
+        if (surveyType === 'developmental' && enableTTS) {
+            // 약간의 딜레이 후 TTS 시작 (이전 TTS 완전 중지 및 화면 전환 대기)
+            setTimeout(() => {
+                readQuestionWithTTS(question.question);
+            }, 500);
+        }
     }
 
     // 뒤로가기 버튼 표시/숨김
@@ -205,6 +441,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // 이전 질문으로 이동
     function goToPreviousQuestion() {
         if (currentQuestionIndex > 0) {
+            // 이전 질문으로 이동 시 TTS 중지
+            if (enableTTS && surveyType === 'developmental') {
+                stopTTS();
+            }
+
             currentQuestionIndex--;
             userAnswers.pop();  // 마지막 답변 제거
             showQuestion(currentQuestionIndex);
@@ -213,6 +454,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function answerQuestion(answer) {
         const currentQuestion = surveyQuestions[currentQuestionIndex];
+
+        // 답변 시 TTS 완전 중지
+        if (enableTTS && surveyType === 'developmental') {
+            stopTTS();
+        }
 
         if (surveyType === 'basic') {
             // 기본 설문: 정답/오답 기록
@@ -230,6 +476,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 category: currentQuestion.category,
                 questionText: currentQuestion.question
             });
+
+            // Critical 질문에 X(아니요) 답변이 나오면 즉시 결과 페이지로 이동
+            if (currentQuestion.category === 'critical' && answer === 'x') {
+                console.log('⚠️ Critical 질문에 X 답변 - 즉시 결과 페이지로 이동');
+                showResults();
+                return;
+            }
         }
 
         currentQuestionIndex++;
@@ -275,6 +528,22 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 결과 출력 (기본 설문 / 발달 검사 분기)
     function showResults() {
+        // 결과 페이지 표시 전 TTS 중지
+        if (enableTTS && surveyType === 'developmental') {
+            stopTTS();
+        }
+
+        if (surveyType === 'basic') {
+            // 기본 설문: TTS 발현 여부만 판단하고 바로 아이 정보 입력 페이지로 이동
+            enableTTS = shouldEnableTTS(userAnswers);
+
+            // 결과 페이지를 표시하지 않고 바로 아이 정보 입력 페이지로 이동
+            surveyPage.classList.remove('active');
+            infoPage.classList.add('active');
+            return; // 여기서 함수 종료
+        }
+
+        // 발달 검사인 경우에만 결과 페이지 표시
         surveyPage.classList.remove('active');
         resultPage.classList.add('active');
 
@@ -284,72 +553,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const answerDetails = document.getElementById('answer-details');
         const resultMessageText = document.getElementById('result-message-text');
 
-        if (surveyType === 'basic') {
-            // 기본 설문: 정답/오답 표시
-            const correctCount = userAnswers.filter(a => a.isCorrect).length;
-
-            // 결과 제목 표시 (기본)
-            const resultTitleElement = document.querySelector('.result-title');
-            if (resultTitleElement) {
-                resultTitleElement.textContent = '발달 검사 완료!';
-                resultTitleElement.className = 'result-title';
-            }
-
-            // 점수 박스 표시
-            const resultScoreElement = document.querySelector('.result-score');
-            if (resultScoreElement) {
-                resultScoreElement.style.display = 'block';
-                resultScoreElement.className = 'result-score';
-            }
-
-            document.getElementById('correct-count').textContent = correctCount;
-
-            if (correctCount === 4) {
-                resultMessageText.textContent = '완벽해요! 모든 질문을 올바르게 이해하셨네요!';
-            } else if (correctCount >= 3) {
-                resultMessageText.textContent = '잘하셨어요! 대부분의 질문을 이해하셨네요!';
-            } else if (correctCount >= 2) {
-                resultMessageText.textContent = '좋아요! 조금만 더 연습하면 완벽할 거예요!';
-            } else {
-                resultMessageText.textContent = '괜찮아요! 토리와 함께 천천히 배워가요!';
-            }
-
-            // 영역별 결과 표시
-            const resultDetailElement = document.querySelector('.result-detail');
-            if (resultDetailElement) {
-                resultDetailElement.style.display = 'block';
-                // 제목을 "답변 내역"으로 변경
-                const detailTitle = resultDetailElement.querySelector('h3');
-                if (detailTitle) {
-                    detailTitle.textContent = '답변 내역';
-                    detailTitle.style.color = '#1a1a1a';
-                    detailTitle.style.textAlign = 'left';
-                }
-            }
-
-            userAnswers.forEach((answer, index) => {
-                const detailDiv = document.createElement('div');
-                detailDiv.className = 'answer-detail-item';
-                detailDiv.innerHTML = `
-                    <span class="question-number">질문 ${index + 1}</span>
-                    <span class="${answer.isCorrect ? 'answer-correct' : 'answer-incorrect'}">
-                        ${answer.isCorrect ? '정답' : '오답'}
-                    </span>
-                    <span class="user-answer-text">답변: ${answer.userAnswer === 'o' ? '네' : '아니요'}</span>
-                `;
-                answerDetails.appendChild(detailDiv);
-            });
-
-            // 3초 후 아이 정보 입력 페이지로 이동
-            setTimeout(() => {
-                if (resultPage.classList.contains('active')) {
-                    resultPage.classList.remove('active');
-                    infoPage.classList.add('active');
-                }
-            }, 3000);
-        } else {
-            // 발달 검사: 영역별 결과 표시 및 위험도 판단
-            const categoryNames = {
+        // 발달 검사: 영역별 결과 표시 및 위험도 판단
+        const categoryNames = {
                 'critical': '핵심 발달 지표',
                 'gross_motor': '대근육 운동',
                 'fine_motor': '소근육 운동',
@@ -362,9 +567,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const criticalAnswers = userAnswers.filter(a => a.category === 'critical');
             const normalAnswers = userAnswers.filter(a => a.category !== 'critical');
 
-            // Critical 질문 중 'O' 개수
-            const criticalYesCount = criticalAnswers.filter(a => a.userAnswer === 'o').length;
-            // 일반 질문 중 'O' 개수
+            // Critical 질문 중 'X(아니요)' 개수
+            const criticalNoCount = criticalAnswers.filter(a => a.userAnswer === 'x').length;
+            // 일반 질문 중 'O(예)' 개수
             const normalYesCount = normalAnswers.filter(a => a.userAnswer === 'o').length;
 
             // 결과 판단
@@ -374,8 +579,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let resultStyle = '';
             let weakestCategories = [];
 
-            if (criticalYesCount > 0) {
-                // Critical 질문에 하나라도 O가 있으면 위험
+            if (criticalNoCount > 0) {
+                // Critical 질문에 하나라도 X(아니요)가 있으면 위험
                 resultType = 'critical';
                 resultTitle = '위험';
                 resultMessage = '아이의 성장이 느려요.\n빨리 가까운 병원을 가야해요.';
@@ -483,6 +688,13 @@ document.addEventListener('DOMContentLoaded', () => {
             setTimeout(() => {
                 typeText(resultMessageText, resultMessage, 50);
             }, resultTitle.length * 100 + 200);
+
+            // TTS로 결과 읽어주기 (타이핑 효과와 함께)
+            if (enableTTS) {
+                setTimeout(() => {
+                    readResultWithTTS(resultTitle, resultMessage.replace(/\n/g, '. '));
+                }, 500);
+            }
 
             // 영역별 결과 숨기기
             const resultDetailElement = document.querySelector('.result-detail');
@@ -646,7 +858,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     resultDetailElement.style.display = 'none';
                 }
             }
-        }
     }
 
     // 위치 기반 카카오맵 열기
@@ -737,7 +948,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (restartBtn) {
         restartBtn.addEventListener('click', () => {
-            resultPage.classList.remove('active');
+            // 처음으로 돌아갈 때 TTS 중지 및 초기화
+            if (enableTTS) {
+                stopTTS();
+            }
+            enableTTS = false;
+
+            // 모든 페이지 비활성화
+            chatRoomPage.classList.remove('active');
+            parentSurveyIntroPage.classList.remove('active');
+            surveyPage.classList.remove('active');
+            if (resultPage) resultPage.classList.remove('active');
+            infoPage.classList.remove('active');
+            loadingPage.classList.remove('active');
+
+            // 랜딩 페이지로 이동
             landingPage.classList.add('active');
         });
     }
@@ -793,6 +1018,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 infoPage.classList.remove('active');
                 loadingPage.classList.add('active');
 
+                // 로딩 시작 시간 기록
+                const loadingStartTime = Date.now();
+                const MIN_LOADING_TIME = 4000; // 최소 4초
+
                 try {
                     // 4. API 호출 (GPT 변환 포함)
                     console.log('질문 로딩 중...');
@@ -807,12 +1036,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         originalId: q.id
                     }));
 
-                    // 6. 설문 시작
-                    loadingPage.classList.remove('active');
-                    surveyPage.classList.add('active');
-                    currentQuestionIndex = 0;
-                    userAnswers = [];
-                    showQuestion(0);
+                    // 6. 최소 로딩 시간 보장
+                    const elapsedTime = Date.now() - loadingStartTime;
+                    const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime);
+
+                    setTimeout(() => {
+                        // 7. 설문 시작
+                        loadingPage.classList.remove('active');
+                        surveyPage.classList.add('active');
+                        currentQuestionIndex = 0;
+                        userAnswers = [];
+                        showQuestion(0);
+                    }, remainingTime);
                 } catch (error) {
                     console.error('질문 로드 실패:', error);
                     showModal('질문을 불러오는데 실패했습니다. 다시 시도해주세요.');

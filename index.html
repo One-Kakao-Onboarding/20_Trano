@@ -126,6 +126,25 @@
 
                 </div>
 
+                <!-- Parent Survey Intro Page -->
+                <div id="parent-survey-intro-page" class="page">
+                    <div class="intro-container">
+                        <div class="intro-tori">
+                            <img src="tori.png" alt="토리" class="intro-tori-img">
+                        </div>
+                        <div class="intro-speech-bubble">
+                            <p class="intro-text">
+                                안녕하세요! 👋<br><br>
+                                아이의 발달 검사를 시작하기 전에<br>
+                                먼저 부모님에 대한 간단한 질문을<br>
+                                4개만 드릴게요!<br><br>
+                                편하게 답변해 주세요 😊
+                            </p>
+                        </div>
+                        <button class="start-parent-survey-btn" id="start-parent-survey-btn">시작하기</button>
+                    </div>
+                </div>
+
                 <!-- Survey Page -->
                 <div id="survey-page" class="page">
                     <!-- Survey Header -->
@@ -136,14 +155,12 @@
                         </div>
                     </div>
 
-                    <!-- Question Bubble -->
-                    <div class="question-bubble question-bubble-large">
+                    <!-- Question Bubble (텍스트 + 이미지) -->
+                    <div class="question-bubble question-bubble-with-image">
                         <p id="question-text" class="question-text"></p>
-                    </div>
-
-                    <!-- Question Image -->
-                    <div class="question-image-container">
-                        <img id="question-image" src="" alt="질문 이미지" class="question-image">
+                        <div class="question-image-wrapper">
+                            <img id="question-image" src="" alt="질문 이미지" class="question-image">
+                        </div>
                     </div>
 
                     <!-- Answer Buttons -->
