@@ -124,32 +124,26 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentQuestionIndex = 0;
     let userAnswers = [];
 
-    // 카테고리별 제품 추천 데이터
+    // 카테고리별 제품 추천 데이터 (result.md 기반)
     const productRecommendations = {
-        'gross_motor': [
-            { name: '실내 미끄럼틀', image: 'https://via.placeholder.com/150?text=미끄럼틀', link: 'https://www.coupang.com/vp/products/6666666?itemId=15555555' },
-            { name: '점프볼', image: 'https://via.placeholder.com/150?text=점프볼', link: 'https://www.coupang.com/vp/products/6666667?itemId=15555556' },
-            { name: '균형잡기 보드', image: 'https://via.placeholder.com/150?text=균형보드', link: 'https://www.coupang.com/vp/products/6666668?itemId=15555557' }
-        ],
-        'fine_motor': [
-            { name: '블록 놀이 세트', image: 'https://via.placeholder.com/150?text=블록세트', link: 'https://www.coupang.com/vp/products/7777777?itemId=16666666' },
-            { name: '끈 끼우기 장난감', image: 'https://via.placeholder.com/150?text=끈끼우기', link: 'https://www.coupang.com/vp/products/7777778?itemId=16666667' },
-            { name: '점토 놀이 세트', image: 'https://via.placeholder.com/150?text=점토놀이', link: 'https://www.coupang.com/vp/products/7777779?itemId=16666668' }
+        'motor': [
+            { name: '컵쌓기', image: 'https://via.placeholder.com/150?text=컵쌓기', link: 'https://kko.to/cSmxh_Z687' },
+            { name: '미끄럼틀', image: 'https://via.placeholder.com/150?text=미끄럼틀', link: 'https://kko.to/ARDMmQZeEo' },
+            { name: '링끼우기', image: 'https://via.placeholder.com/150?text=링끼우기', link: 'https://kko.to/niB2dV75Br' }
         ],
         'cognition': [
-            { name: '퍼즐 놀이', image: 'https://via.placeholder.com/150?text=퍼즐', link: 'https://www.coupang.com/vp/products/8888888?itemId=17777777' },
-            { name: '색깔 분류 게임', image: 'https://via.placeholder.com/150?text=색깔분류', link: 'https://www.coupang.com/vp/products/8888889?itemId=17777778' },
-            { name: '모양 맞추기', image: 'https://via.placeholder.com/150?text=모양맞추기', link: 'https://www.coupang.com/vp/products/8888890?itemId=17777779' }
+            { name: '도형맞추기', image: 'https://via.placeholder.com/150?text=도형맞추기', link: 'https://kko.kakao.com/2QQc2aoL74' },
+            { name: '비지북', image: 'https://via.placeholder.com/150?text=비지북', link: 'https://kko.to/MN5aJmea-q' }
         ],
         'language': [
-            { name: '그림책 세트', image: 'https://via.placeholder.com/150?text=그림책', link: 'https://www.coupang.com/vp/products/9999999?itemId=18888888' },
-            { name: '말하기 놀이 카드', image: 'https://via.placeholder.com/150?text=놀이카드', link: 'https://www.coupang.com/vp/products/9999998?itemId=18888887' },
-            { name: '단어 학습 포스터', image: 'https://via.placeholder.com/150?text=학습포스터', link: 'https://www.coupang.com/vp/products/9999997?itemId=18888886' }
+            { name: '사운드카드', image: 'https://via.placeholder.com/150?text=사운드카드', link: 'https://kko.to/Iu3GiDafF8' },
+            { name: '플랩북', image: 'https://via.placeholder.com/150?text=플랩북', link: 'https://kko.to/bM8-nC_h9h' },
+            { name: '낱말 벽보', image: 'https://via.placeholder.com/150?text=낱말벽보', link: 'https://kko.to/voohUL9s33' }
         ],
         'social': [
-            { name: '역할놀이 세트', image: 'https://via.placeholder.com/150?text=역할놀이', link: 'https://www.coupang.com/vp/products/1111111?itemId=19999999' },
-            { name: '인형 놀이', image: 'https://via.placeholder.com/150?text=인형놀이', link: 'https://www.coupang.com/vp/products/1111112?itemId=19999998' },
-            { name: '보드게임', image: 'https://via.placeholder.com/150?text=보드게임', link: 'https://www.coupang.com/vp/products/1111113?itemId=19999997' }
+            { name: '역할놀이', image: 'https://via.placeholder.com/150?text=역할놀이', link: 'https://kko.to/MmEcyi3QJP' },
+            { name: '역할놀이2', image: 'https://via.placeholder.com/150?text=역할놀이2', link: 'https://kko.to/gBbg0HWhSN' },
+            { name: '보드게임', image: 'https://via.placeholder.com/150?text=보드게임', link: 'https://kko.to/Q4lyiE1ReH' }
         ]
     };
 
@@ -406,25 +400,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // "주의" 상태일 때만 제품 추천 표시
             if (resultType === 'warning' && resultDetailElement) {
-                // 가장 점수가 낮은 카테고리 찾기 (critical 제외)
-                const categoryScores = {};
+                // 카테고리 통합 (gross_motor + fine_motor = motor)
+                const groupedCategoryScores = {
+                    'motor': { yes: 0, total: 0 },
+                    'cognition': { yes: 0, total: 0 },
+                    'language': { yes: 0, total: 0 },
+                    'social': { yes: 0, total: 0 }
+                };
+
                 normalAnswers.forEach(answer => {
-                    if (!categoryScores[answer.category]) {
-                        categoryScores[answer.category] = { yes: 0, total: 0 };
+                    let mappedCategory = answer.category;
+
+                    // gross_motor와 fine_motor를 motor로 통합
+                    if (answer.category === 'gross_motor' || answer.category === 'fine_motor') {
+                        mappedCategory = 'motor';
                     }
-                    categoryScores[answer.category].total++;
-                    if (answer.userAnswer === 'o') {
-                        categoryScores[answer.category].yes++;
+
+                    if (groupedCategoryScores[mappedCategory]) {
+                        groupedCategoryScores[mappedCategory].total++;
+                        if (answer.userAnswer === 'o') {
+                            groupedCategoryScores[mappedCategory].yes++;
+                        }
                     }
                 });
 
+                // 가장 점수가 낮은 카테고리 찾기
                 let lowestCategory = null;
                 let lowestScore = 1;
-                Object.keys(categoryScores).forEach(category => {
-                    const score = categoryScores[category].yes / categoryScores[category].total;
-                    if (score < lowestScore) {
-                        lowestScore = score;
-                        lowestCategory = category;
+                Object.keys(groupedCategoryScores).forEach(category => {
+                    const scores = groupedCategoryScores[category];
+                    if (scores.total > 0) {
+                        const score = scores.yes / scores.total;
+                        if (score < lowestScore) {
+                            lowestScore = score;
+                            lowestCategory = category;
+                        }
                     }
                 });
 
@@ -432,10 +442,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 const typingDelay = resultTitle.length * 100 + resultMessage.length * 50 + 500;
                 setTimeout(() => {
                     if (lowestCategory && productRecommendations[lowestCategory]) {
+                        // 카테고리 한글명
+                        const categoryDisplayNames = {
+                            'motor': '근육',
+                            'cognition': '인지',
+                            'language': '언어',
+                            'social': '사회성'
+                        };
+
                         resultDetailElement.style.display = 'block';
                         resultDetailElement.innerHTML = `
                             <h3>아이의 성장을 도울 제품을 추천해요!</h3>
-                            <p style="font-size: 14px; color: #666; margin-bottom: 10px;">${categoryNames[lowestCategory]} 발달을 위한 추천</p>
+                            <p style="font-size: 14px; color: #666; margin-bottom: 10px;">${categoryDisplayNames[lowestCategory]} 발달을 위한 추천</p>
                             <div class="product-grid">
                                 ${productRecommendations[lowestCategory].map(product => `
                                     <a href="${product.link}" target="_blank" class="product-card">
