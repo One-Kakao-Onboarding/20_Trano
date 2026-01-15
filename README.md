@@ -1,6 +1,42 @@
 # 카나나 토리
 
-발달장애인 부모를 위한 자녀 발달 체크 서비스
+<p align="center">
+  <img src="assets/images/tori.png" alt="토리" width="150">
+</p>
+
+<p align="center">
+  <strong>우리아이 성장지킴이 토리</strong><br>
+  발달장애 아동 부모를 위한 AI 발달검사 서비스
+</p>
+
+---
+
+## 프로젝트 동기
+
+> "발달검사 문항이 너무 어려워요. 아이에게 어떻게 설명해야 할지 모르겠어요."
+
+많은 부모님들이 자녀의 발달검사를 진행할 때 **전문 용어**와 **복잡한 문장** 때문에 어려움을 겪습니다.
+특히 발달장애 아동의 경우, 부모님이 질문을 이해하고 아이에게 다시 설명해야 하는 이중 부담이 있습니다.
+
+**카나나 토리**는 이런 부모님들의 고민을 해결하기 위해 탄생했습니다.
+
+---
+
+## 프로젝트 설명
+
+**카나나 토리**는 K-DST(한국형 발달선별검사) 기반의 발달검사를 **AI가 쉬운 말로 변환**하여 제공하는 서비스입니다.
+
+### 주요 기능
+
+| 기능 | 설명 |
+|------|------|
+| **AI 쉬운 말 변환** | GPT-4가 어려운 검사 문항을 아이도 이해할 수 있는 쉬운 말로 바꿔줍니다 |
+| **TTS 음성 지원** | 토리가 직접 아이에게 질문을 읽어줍니다 |
+| **발달 영역별 분석** | 대근육, 소근육, 인지, 언어, 사회성 5개 영역 평가 |
+| **맞춤 추천** | 검사 결과에 따른 발달 지원 제품 추천 |
+| **병원 안내** | 추가 검사가 필요한 경우 근처 소아과 정보 제공 |
+
+---
 
 ## 기술 스택
 
@@ -86,41 +122,3 @@ npm run dev
 - 프론트엔드: http://localhost:3000
 - API: http://localhost:3000/api/questions
 
-### 5. Vercel 배포
-
-```bash
-# Vercel CLI 설치
-npm i -g vercel
-
-# 배포
-vercel
-
-# 프로덕션 배포
-vercel --prod
-```
-
-Vercel Dashboard에서 환경 변수 설정 필요:
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `OPENAI_API_KEY`
-
-## API 엔드포인트
-
-### GET /api/questions
-
-원본 설문 질문 조회
-
-### GET /api/questions/easy
-
-GPT로 변환된 쉬운 버전 질문 조회 (캐싱 적용)
-
-## 프론트엔드 연동 예시
-
-```javascript
-// script.js에서 API 호출
-async function loadQuestions() {
-  const res = await fetch('/api/questions/easy');
-  const { data } = await res.json();
-  return data;
-}
-```
