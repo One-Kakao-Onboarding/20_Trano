@@ -166,6 +166,29 @@ document.addEventListener('DOMContentLoaded', () => {
         return false;
     }
 
+    // 현재 실행 중인 TTS 제어 변수
+    let currentTTSController = null;
+
+    /**
+     * TTS를 완전히 중지하는 함수
+     */
+    function stopTTS() {
+        // 컨트롤러가 있으면 중단
+        if (currentTTSController) {
+            currentTTSController.abort = true;
+        }
+
+        // 음성 합성 중지
+        if (window.speechSynthesis.speaking) {
+            window.speechSynthesis.cancel();
+        }
+
+        // 토리 애니메이션 중지
+        toggleToriSpeakingAnimation(false);
+
+        console.log('✋ TTS 중지됨');
+    }
+
     /**
      * TTS로 텍스트를 읽어주는 함수
      * @param {string} text - 읽어줄 텍스트
@@ -182,23 +205,38 @@ document.addEventListener('DOMContentLoaded', () => {
             // 기존 음성 중지
             window.speechSynthesis.cancel();
 
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'ko-KR';
-            utterance.rate = 0.9; // 읽는 속도 (0.1 ~ 10)
-            utterance.pitch = 1.0; // 음높이 (0 ~ 2)
-            utterance.volume = 1.0; // 볼륨 (0 ~ 1)
+            // 컨트롤러 객체 생성
+            const controller = { abort: false };
+            currentTTSController = controller;
 
-            utterance.onend = () => {
-                console.log('TTS 완료');
-                resolve();
-            };
+            // 짧은 딜레이 후 음성 시작 (cancel 처리를 위해)
+            setTimeout(() => {
+                // 중단 요청이 있었으면 실행하지 않음
+                if (controller.abort) {
+                    resolve();
+                    return;
+                }
 
-            utterance.onerror = (event) => {
-                console.error('TTS 에러:', event);
-                resolve(); // 에러가 나도 계속 진행
-            };
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ko-KR';
+                utterance.rate = 0.9; // 읽는 속도 (0.1 ~ 10)
+                utterance.pitch = 1.0; // 음높이 (0 ~ 2)
+                utterance.volume = 1.0; // 볼륨 (0 ~ 1)
 
-            window.speechSynthesis.speak(utterance);
+                utterance.onend = () => {
+                    if (!controller.abort) {
+                        console.log('TTS 완료');
+                    }
+                    resolve();
+                };
+
+                utterance.onerror = (event) => {
+                    console.error('TTS 에러:', event);
+                    resolve(); // 에러가 나도 계속 진행
+                };
+
+                window.speechSynthesis.speak(utterance);
+            }, 50);
         });
     }
 
@@ -207,12 +245,23 @@ document.addEventListener('DOMContentLoaded', () => {
      * @param {boolean} isActive - 애니메이션 활성화 여부
      */
     function toggleToriSpeakingAnimation(isActive) {
+        // 설문 페이지 토리
         const surveyTori = document.getElementById('survey-tori');
         if (surveyTori) {
             if (isActive) {
                 surveyTori.classList.add('speaking');
             } else {
                 surveyTori.classList.remove('speaking');
+            }
+        }
+
+        // 결과 페이지 토리
+        const resultTori = document.querySelector('.tori-face-large');
+        if (resultTori) {
+            if (isActive) {
+                resultTori.classList.add('speaking');
+            } else {
+                resultTori.classList.remove('speaking');
             }
         }
     }
@@ -231,8 +280,46 @@ document.addEventListener('DOMContentLoaded', () => {
             // 질문 텍스트 읽기
             await speakText(questionText);
 
+            // 중단 요청 확인
+            if (currentTTSController && currentTTSController.abort) {
+                toggleToriSpeakingAnimation(false);
+                return;
+            }
+
             // 버튼 안내 멘트 읽기
             await speakText('아니오 버튼은 왼쪽, 네 버튼은 오른쪽에 있습니다');
+
+            // 토리 애니메이션 종료
+            toggleToriSpeakingAnimation(false);
+        } catch (error) {
+            console.error('TTS 실행 중 오류:', error);
+            toggleToriSpeakingAnimation(false);
+        }
+    }
+
+    /**
+     * 결과 페이지를 TTS로 읽어주는 함수
+     * @param {string} resultTitle - 결과 제목 (위험/주의/안심)
+     * @param {string} resultMessage - 결과 메시지
+     */
+    async function readResultWithTTS(resultTitle, resultMessage) {
+        if (!enableTTS) return;
+
+        try {
+            // 토리 애니메이션 시작
+            toggleToriSpeakingAnimation(true);
+
+            // 결과 제목 읽기
+            await speakText(resultTitle);
+
+            // 중단 요청 확인
+            if (currentTTSController && currentTTSController.abort) {
+                toggleToriSpeakingAnimation(false);
+                return;
+            }
+
+            // 결과 메시지 읽기
+            await speakText(resultMessage);
 
             // 토리 애니메이션 종료
             toggleToriSpeakingAnimation(false);
@@ -327,10 +414,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // 발달검사일 때 TTS 실행
         if (surveyType === 'developmental' && enableTTS) {
-            // 약간의 딜레이 후 TTS 시작 (화면 전환 후)
+            // 약간의 딜레이 후 TTS 시작 (이전 TTS 완전 중지 및 화면 전환 대기)
             setTimeout(() => {
                 readQuestionWithTTS(question.question);
-            }, 300);
+            }, 500);
         }
     }
 
@@ -344,6 +431,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // 이전 질문으로 이동
     function goToPreviousQuestion() {
         if (currentQuestionIndex > 0) {
+            // 이전 질문으로 이동 시 TTS 중지
+            if (enableTTS && surveyType === 'developmental') {
+                stopTTS();
+            }
+
             currentQuestionIndex--;
             userAnswers.pop();  // 마지막 답변 제거
             showQuestion(currentQuestionIndex);
@@ -353,10 +445,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function answerQuestion(answer) {
         const currentQuestion = surveyQuestions[currentQuestionIndex];
 
-        // 답변 시 TTS 중지
+        // 답변 시 TTS 완전 중지
         if (enableTTS && surveyType === 'developmental') {
-            window.speechSynthesis.cancel();
-            toggleToriSpeakingAnimation(false);
+            stopTTS();
         }
 
         if (surveyType === 'basic') {
@@ -420,6 +511,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 결과 출력 (기본 설문 / 발달 검사 분기)
     function showResults() {
+        // 결과 페이지 표시 전 TTS 중지
+        if (enableTTS && surveyType === 'developmental') {
+            stopTTS();
+        }
+
         surveyPage.classList.remove('active');
         resultPage.classList.add('active');
 
@@ -563,6 +659,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 typeText(resultMessageText, resultMessage, 50);
             }, resultTitle.length * 100 + 200);
 
+            // TTS로 결과 읽어주기 (타이핑 효과와 함께)
+            if (enableTTS) {
+                setTimeout(() => {
+                    readResultWithTTS(resultTitle, resultMessage.replace(/\n/g, '. '));
+                }, 500);
+            }
+
             // 영역별 결과 숨기기
             const resultDetailElement = document.querySelector('.result-detail');
 
@@ -667,6 +770,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (restartBtn) {
         restartBtn.addEventListener('click', () => {
+            // 처음으로 돌아갈 때 TTS 중지
+            if (enableTTS) {
+                stopTTS();
+            }
             resultPage.classList.remove('active');
             landingPage.classList.add('active');
         });
