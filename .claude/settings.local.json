@@ -17,7 +17,9 @@
       "Bash(vercel --prod:*)",
       "Bash(vercel deploy:*)",
       "Bash(vercel project:*)",
-      "Bash(vercel ls:*)"
+      "Bash(vercel ls:*)",
+      "Bash(git fetch:*)",
+      "Bash(git merge:*)"
     ]
   }
 }
