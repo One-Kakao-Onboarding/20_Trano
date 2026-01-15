@@ -828,12 +828,13 @@ body {
 }
 
 .result-container {
-    padding: 60px 20px 30px;
-    min-height: 100%;
+    padding: 50px 20px 20px;
+    height: 100%;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
-    gap: 20px;
+    gap: 15px;
+    overflow: hidden;
 }
 
 .result-header {
@@ -842,9 +843,9 @@ body {
 }
 
 .tori-face-large {
-    width: 90px;
-    height: 90px;
-    margin: 0 auto 12px;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 8px;
     border-radius: 50%;
     overflow: hidden;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
@@ -858,7 +859,7 @@ body {
 }
 
 .result-title {
-    font-size: 32px;
+    font-size: 28px;
     font-weight: 800;
     color: #1a1a1a;
     margin-bottom: 0;
@@ -880,19 +881,20 @@ body {
 .result-content {
     background: white;
     border-radius: 20px;
-    padding: 25px 20px;
+    padding: 20px 16px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
     flex: 1;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 .result-score {
     text-align: center;
-    padding: 20px;
+    padding: 15px;
     background: linear-gradient(135deg, #FEE500 0%, #FFD700 100%);
-    border-radius: 15px;
-    margin-bottom: 20px;
+    border-radius: 12px;
+    margin-bottom: 12px;
     flex-shrink: 0;
 }
 
@@ -939,14 +941,14 @@ body {
 
 .result-message {
     text-align: center;
-    padding: 10px;
-    margin-bottom: 20px;
+    padding: 8px;
+    margin-bottom: 10px;
     flex-shrink: 0;
 }
 
 #result-message-text {
-    font-size: 18px;
-    line-height: 1.7;
+    font-size: 16px;
+    line-height: 1.6;
     color: #333;
     font-weight: 600;
     word-break: keep-all;
@@ -963,6 +965,7 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
+    overflow: hidden;
 }
 
 .result-detail h3 {
@@ -1092,26 +1095,26 @@ body {
 /* 소아과 검색 섹션 */
 .hospital-search-section {
     text-align: center;
-    padding: 10px 0;
+    padding: 5px 0;
 }
 
 .hospital-search-section h3 {
-    font-size: 18px;
+    font-size: 16px;
     font-weight: 700;
     color: #ff4444;
-    margin-bottom: 8px;
+    margin-bottom: 4px;
 }
 
 .hospital-search-desc {
-    font-size: 14px;
+    font-size: 13px;
     color: #666;
-    margin-bottom: 15px;
+    margin-bottom: 10px;
 }
 
 .hospital-list {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .hospital-loading {
@@ -1131,9 +1134,9 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px;
+    padding: 12px;
     background: #f8f9fa;
-    border-radius: 12px;
+    border-radius: 10px;
     text-decoration: none;
     transition: all 0.2s;
 }
@@ -1149,20 +1152,20 @@ body {
 }
 
 .hospital-name {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
     color: #333;
-    margin: 0 0 4px 0;
+    margin: 0 0 2px 0;
 }
 
 .hospital-address {
-    font-size: 12px;
+    font-size: 11px;
     color: #666;
     margin: 0 0 2px 0;
 }
 
 .hospital-phone {
-    font-size: 13px;
+    font-size: 12px;
     color: #ff4444;
     font-weight: 600;
     margin: 0;
@@ -1199,18 +1202,18 @@ body {
 
 .restart-btn {
     width: 100%;
-    padding: 16px;
+    padding: 14px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
-    border-radius: 15px;
-    font-size: 16px;
+    border-radius: 12px;
+    font-size: 15px;
     font-weight: 700;
     cursor: pointer;
     transition: transform 0.2s;
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
     flex-shrink: 0;
-    margin-top: 0;
+    margin-top: auto;
 }
 
 .restart-btn:hover {
