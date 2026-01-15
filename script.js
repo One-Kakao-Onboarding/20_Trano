@@ -124,6 +124,35 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentQuestionIndex = 0;
     let userAnswers = [];
 
+    // 카테고리별 제품 추천 데이터
+    const productRecommendations = {
+        'gross_motor': [
+            { name: '실내 미끄럼틀', image: 'https://via.placeholder.com/150?text=미끄럼틀', link: 'https://www.coupang.com/vp/products/6666666?itemId=15555555' },
+            { name: '점프볼', image: 'https://via.placeholder.com/150?text=점프볼', link: 'https://www.coupang.com/vp/products/6666667?itemId=15555556' },
+            { name: '균형잡기 보드', image: 'https://via.placeholder.com/150?text=균형보드', link: 'https://www.coupang.com/vp/products/6666668?itemId=15555557' }
+        ],
+        'fine_motor': [
+            { name: '블록 놀이 세트', image: 'https://via.placeholder.com/150?text=블록세트', link: 'https://www.coupang.com/vp/products/7777777?itemId=16666666' },
+            { name: '끈 끼우기 장난감', image: 'https://via.placeholder.com/150?text=끈끼우기', link: 'https://www.coupang.com/vp/products/7777778?itemId=16666667' },
+            { name: '점토 놀이 세트', image: 'https://via.placeholder.com/150?text=점토놀이', link: 'https://www.coupang.com/vp/products/7777779?itemId=16666668' }
+        ],
+        'cognition': [
+            { name: '퍼즐 놀이', image: 'https://via.placeholder.com/150?text=퍼즐', link: 'https://www.coupang.com/vp/products/8888888?itemId=17777777' },
+            { name: '색깔 분류 게임', image: 'https://via.placeholder.com/150?text=색깔분류', link: 'https://www.coupang.com/vp/products/8888889?itemId=17777778' },
+            { name: '모양 맞추기', image: 'https://via.placeholder.com/150?text=모양맞추기', link: 'https://www.coupang.com/vp/products/8888890?itemId=17777779' }
+        ],
+        'language': [
+            { name: '그림책 세트', image: 'https://via.placeholder.com/150?text=그림책', link: 'https://www.coupang.com/vp/products/9999999?itemId=18888888' },
+            { name: '말하기 놀이 카드', image: 'https://via.placeholder.com/150?text=놀이카드', link: 'https://www.coupang.com/vp/products/9999998?itemId=18888887' },
+            { name: '단어 학습 포스터', image: 'https://via.placeholder.com/150?text=학습포스터', link: 'https://www.coupang.com/vp/products/9999997?itemId=18888886' }
+        ],
+        'social': [
+            { name: '역할놀이 세트', image: 'https://via.placeholder.com/150?text=역할놀이', link: 'https://www.coupang.com/vp/products/1111111?itemId=19999999' },
+            { name: '인형 놀이', image: 'https://via.placeholder.com/150?text=인형놀이', link: 'https://www.coupang.com/vp/products/1111112?itemId=19999998' },
+            { name: '보드게임', image: 'https://via.placeholder.com/150?text=보드게임', link: 'https://www.coupang.com/vp/products/1111113?itemId=19999997' }
+        ]
+    };
+
     const startSurveyTrigger = document.getElementById('start-survey-trigger');
     const questionText = document.getElementById('question-text');
     const questionImage = document.getElementById('question-image');
@@ -205,6 +234,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (surveyType === 'basic') {
             // 기본 설문: 정답/오답 표시
             const correctCount = userAnswers.filter(a => a.isCorrect).length;
+
+            // 결과 제목 표시 (기본)
+            const resultTitleElement = document.querySelector('.result-title');
+            if (resultTitleElement) {
+                resultTitleElement.textContent = '발달 검사 완료!';
+                resultTitleElement.className = 'result-title';
+                resultTitleElement.style.removeProperty('--typing-complete');
+            }
+
+            // 점수 박스 표시
+            const resultScoreElement = document.querySelector('.result-score');
+            if (resultScoreElement) {
+                resultScoreElement.style.display = 'block';
+                resultScoreElement.className = 'result-score';
+            }
+
             document.getElementById('correct-count').textContent = correctCount;
 
             if (correctCount === 4) {
@@ -215,6 +260,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 resultMessageText.textContent = '좋아요! 조금만 더 연습하면 완벽할 거예요!';
             } else {
                 resultMessageText.textContent = '괜찮아요! 토리와 함께 천천히 배워가요!';
+            }
+
+            // 영역별 결과 표시
+            const resultDetailElement = document.querySelector('.result-detail');
+            if (resultDetailElement) {
+                resultDetailElement.style.display = 'block';
+                // 제목 변경
+                const detailTitle = resultDetailElement.querySelector('h3');
+                if (detailTitle) {
+                    detailTitle.textContent = '답변 내역';
+                    detailTitle.style.color = '#1a1a1a';
+                }
             }
 
             userAnswers.forEach((answer, index) => {
@@ -238,12 +295,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }, 3000);
         } else {
-            // 발달 검사: 영역별 결과 표시
-            const yesCount = userAnswers.filter(a => a.userAnswer === 'o').length;
-            const totalCount = userAnswers.length;
-            document.getElementById('correct-count').textContent = yesCount;
-
+            // 발달 검사: 영역별 결과 표시 및 위험도 판단
             const categoryNames = {
+                'critical': '핵심 발달 지표',
                 'gross_motor': '대근육 운동',
                 'fine_motor': '소근육 운동',
                 'cognition': '인지',
@@ -251,33 +305,139 @@ document.addEventListener('DOMContentLoaded', () => {
                 'social': '사회성'
             };
 
-            resultMessageText.textContent = `${totalCount}개 질문 중 ${yesCount}개 항목에서 발달이 확인되었습니다.`;
+            // Critical 질문과 일반 질문 분리
+            const criticalAnswers = userAnswers.filter(a => a.category === 'critical');
+            const normalAnswers = userAnswers.filter(a => a.category !== 'critical');
 
-            // 영역별로 그룹화하여 표시
-            const groupedByCategory = {};
-            userAnswers.forEach(answer => {
-                if (!groupedByCategory[answer.category]) {
-                    groupedByCategory[answer.category] = [];
+            // Critical 질문 중 'O' 개수
+            const criticalYesCount = criticalAnswers.filter(a => a.userAnswer === 'o').length;
+            // 일반 질문 중 'O' 개수
+            const normalYesCount = normalAnswers.filter(a => a.userAnswer === 'o').length;
+
+            // 결과 판단
+            let resultType = 'normal'; // 'critical', 'warning', 'normal'
+            let resultTitle = '';
+            let resultMessage = '';
+            let resultStyle = '';
+
+            if (criticalYesCount > 0) {
+                // Critical 질문에 하나라도 O가 있으면 위험
+                resultType = 'critical';
+                resultTitle = '위험';
+                resultMessage = '아이의 성장이 느려요.\n빨리 가까운 병원을 가야해요.';
+                resultStyle = 'danger';
+            } else if (normalYesCount <= 5) {
+                // 일반 질문 중 O가 5개 이하면 주의
+                resultType = 'warning';
+                resultTitle = '주의';
+                resultMessage = '아이의 성장이 조금 느려요!\n두 달 후에 토리가 다시 찾아올게요.';
+                resultStyle = 'warning';
+            } else {
+                // 일반 질문 중 O가 6개 이상이면 안심
+                resultType = 'normal';
+                resultTitle = '안심';
+                resultMessage = '아이가 잘 자라고 있어요!\n걱정하지 마세요. 1년 뒤 토리가 다시 찾아올게요.';
+                resultStyle = 'success';
+            }
+
+            // 결과 제목 및 메시지 표시
+            const resultTitleElement = document.querySelector('.result-title');
+            if (resultTitleElement) {
+                resultTitleElement.textContent = '';
+                resultTitleElement.className = `result-title ${resultStyle}`;
+                // 타이핑 효과
+                typeText(resultTitleElement, resultTitle, 100);
+            }
+
+            // 결과 점수 박스 숨기기
+            const resultScoreElement = document.querySelector('.result-score');
+            if (resultScoreElement) {
+                resultScoreElement.style.display = 'none';
+            }
+
+            // 결과 메시지에 타이핑 효과
+            resultMessageText.textContent = '';
+            resultMessageText.style.whiteSpace = 'pre-line';
+            setTimeout(() => {
+                typeText(resultMessageText, resultMessage, 50);
+            }, resultTitle.length * 100 + 200);
+
+            // 영역별 결과 숨기기
+            const resultDetailElement = document.querySelector('.result-detail');
+
+            // 초기에는 숨김
+            if (resultDetailElement) {
+                resultDetailElement.style.display = 'none';
+            }
+
+            // "주의" 상태일 때만 제품 추천 표시
+            if (resultType === 'warning' && resultDetailElement) {
+                // 가장 점수가 낮은 카테고리 찾기 (critical 제외)
+                const categoryScores = {};
+                normalAnswers.forEach(answer => {
+                    if (!categoryScores[answer.category]) {
+                        categoryScores[answer.category] = { yes: 0, total: 0 };
+                    }
+                    categoryScores[answer.category].total++;
+                    if (answer.userAnswer === 'o') {
+                        categoryScores[answer.category].yes++;
+                    }
+                });
+
+                let lowestCategory = null;
+                let lowestScore = 1;
+                Object.keys(categoryScores).forEach(category => {
+                    const score = categoryScores[category].yes / categoryScores[category].total;
+                    if (score < lowestScore) {
+                        lowestScore = score;
+                        lowestCategory = category;
+                    }
+                });
+
+                // 제품 추천 표시 (타이핑 효과 후 표시)
+                const typingDelay = resultTitle.length * 100 + resultMessage.length * 50 + 500;
+                setTimeout(() => {
+                    if (lowestCategory && productRecommendations[lowestCategory]) {
+                        resultDetailElement.style.display = 'block';
+                        resultDetailElement.innerHTML = `
+                            <h3>아이의 성장을 도울 제품을 추천해요!</h3>
+                            <p style="font-size: 14px; color: #666; margin-bottom: 10px;">${categoryNames[lowestCategory]} 발달을 위한 추천</p>
+                            <div class="product-grid">
+                                ${productRecommendations[lowestCategory].map(product => `
+                                    <a href="${product.link}" target="_blank" class="product-card">
+                                        <img src="${product.image}" alt="${product.name}" class="product-image">
+                                        <p class="product-name">${product.name}</p>
+                                    </a>
+                                `).join('')}
+                            </div>
+                        `;
+                    } else {
+                        resultDetailElement.style.display = 'none';
+                    }
+                }, typingDelay);
+            } else {
+                if (resultDetailElement) {
+                    resultDetailElement.style.display = 'none';
                 }
-                groupedByCategory[answer.category].push(answer);
-            });
-
-            Object.keys(groupedByCategory).forEach(category => {
-                const categoryDiv = document.createElement('div');
-                categoryDiv.className = 'category-result';
-
-                const categoryAnswers = groupedByCategory[category];
-                const categoryYesCount = categoryAnswers.filter(a => a.userAnswer === 'o').length;
-
-                categoryDiv.innerHTML = `
-                    <div class="category-header">
-                        <strong>${categoryNames[category] || category}</strong>
-                        <span>${categoryYesCount} / ${categoryAnswers.length}</span>
-                    </div>
-                `;
-                answerDetails.appendChild(categoryDiv);
-            });
+            }
         }
+    }
+
+    // 타이핑 효과 함수
+    function typeText(element, text, speed) {
+        let index = 0;
+        const interval = setInterval(() => {
+            if (index < text.length) {
+                element.textContent += text[index];
+                index++;
+            } else {
+                clearInterval(interval);
+                // 타이핑 완료 시 커서 제거
+                if (element.classList.contains('result-title')) {
+                    element.style.setProperty('--typing-complete', '1');
+                }
+            }
+        }, speed);
     }
 
     if (xBtn) xBtn.addEventListener('click', () => answerQuestion('x'));

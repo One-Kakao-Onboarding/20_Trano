@@ -52,6 +52,22 @@ export default async function handler(req, res) {
 
     // limit 파라미터가 있으면 각 영역별로 N개씩 가져오기
     if (age && limitPerCategory && !category) {
+      // 1. critical 질문 먼저 가져오기 (2개)
+      const { data: criticalData, error: criticalError } = await supabase
+        .from('questions')
+        .select('*')
+        .eq('target_age_months', parseInt(age, 10))
+        .eq('category', 'critical')
+        .limit(2);
+
+      if (criticalError) {
+        console.warn('Critical category fetch warning:', criticalError);
+      }
+      if (criticalData) {
+        questions.push(...criticalData);
+      }
+
+      // 2. 나머지 카테고리에서 각 2개씩 가져오기
       const categories = ['gross_motor', 'fine_motor', 'cognition', 'language', 'social'];
 
       for (const cat of categories) {

@@ -710,6 +710,19 @@ body {
     margin-bottom: 10px;
 }
 
+/* 결과 상태별 스타일 */
+.result-title.danger {
+    color: #ff4444;
+}
+
+.result-title.warning {
+    color: #ff9800;
+}
+
+.result-title.success {
+    color: #37b24d;
+}
+
 .result-content {
     background: white;
     border-radius: 20px;
@@ -723,6 +736,34 @@ body {
     background: linear-gradient(135deg, #FEE500 0%, #FFD700 100%);
     border-radius: 15px;
     margin-bottom: 20px;
+}
+
+/* 결과 상태별 점수 배경색 */
+.result-score.danger {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ff4444 100%);
+}
+
+.result-score.danger .score-label,
+.result-score.danger .score-number {
+    color: white;
+}
+
+.result-score.warning {
+    background: linear-gradient(135deg, #ffa94d 0%, #ff9800 100%);
+}
+
+.result-score.warning .score-label,
+.result-score.warning .score-number {
+    color: white;
+}
+
+.result-score.success {
+    background: linear-gradient(135deg, #51cf66 0%, #37b24d 100%);
+}
+
+.result-score.success .score-label,
+.result-score.success .score-number {
+    color: white;
 }
 
 .score-label {
@@ -745,10 +786,29 @@ body {
 }
 
 #result-message-text {
-    font-size: 16px;
-    line-height: 1.6;
+    font-size: 18px;
+    line-height: 1.8;
     color: #333;
     font-weight: 600;
+    min-height: 80px;
+}
+
+/* 타이핑 효과 애니메이션 */
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+.result-title {
+    position: relative;
+    --typing-complete: 0;
+}
+
+.result-title::after {
+    content: '|';
+    animation: blink 0.7s infinite;
+    margin-left: 2px;
+    opacity: calc(1 - var(--typing-complete));
 }
 
 .result-detail {
@@ -758,8 +818,9 @@ body {
 .result-detail h3 {
     font-size: 18px;
     font-weight: 700;
-    color: #1a1a1a;
-    margin-bottom: 15px;
+    color: #ff9800;
+    margin-bottom: 5px;
+    text-align: center;
 }
 
 .answer-detail-item {
@@ -793,6 +854,60 @@ body {
 .user-answer-text {
     font-size: 13px;
     color: #666;
+}
+
+/* 제품 추천 그리드 */
+.product-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-top: 20px;
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.product-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: white;
+    border: 2px solid #f1f3f5;
+    border-radius: 12px;
+    padding: 15px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.product-card:hover {
+    border-color: #51cf66;
+    box-shadow: 0 4px 12px rgba(81, 207, 102, 0.2);
+    transform: translateY(-2px);
+}
+
+.product-image {
+    width: 100%;
+    height: 80px;
+    object-fit: contain;
+    margin-bottom: 10px;
+}
+
+.product-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #333;
+    text-align: center;
+    margin: 0;
 }
 
 .restart-btn {
