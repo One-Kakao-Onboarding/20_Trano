@@ -831,6 +831,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 infoPage.classList.remove('active');
                 loadingPage.classList.add('active');
 
+                // 로딩 시작 시간 기록
+                const loadingStartTime = Date.now();
+                const MIN_LOADING_TIME = 4000; // 최소 4초
+
                 try {
                     // 4. API 호출 (GPT 변환 포함)
                     console.log('질문 로딩 중...');
@@ -845,12 +849,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         originalId: q.id
                     }));
 
-                    // 6. 설문 시작
-                    loadingPage.classList.remove('active');
-                    surveyPage.classList.add('active');
-                    currentQuestionIndex = 0;
-                    userAnswers = [];
-                    showQuestion(0);
+                    // 6. 최소 로딩 시간 보장
+                    const elapsedTime = Date.now() - loadingStartTime;
+                    const remainingTime = Math.max(0, MIN_LOADING_TIME - elapsedTime);
+
+                    setTimeout(() => {
+                        // 7. 설문 시작
+                        loadingPage.classList.remove('active');
+                        surveyPage.classList.add('active');
+                        currentQuestionIndex = 0;
+                        userAnswers = [];
+                        showQuestion(0);
+                    }, remainingTime);
                 } catch (error) {
                     console.error('질문 로드 실패:', error);
                     showModal('질문을 불러오는데 실패했습니다. 다시 시도해주세요.');
