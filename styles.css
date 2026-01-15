@@ -543,7 +543,7 @@ body {
     position: relative;
     padding: 60px 0 10px;
     text-align: center;
-    min-height: 50px;
+    min-height: 80px;
     flex-shrink: 0;
 }
 
@@ -558,14 +558,31 @@ body {
 }
 
 .survey-tori-face {
-    width: 70px;
-    height: 70px;
+    width: 140px;
+    height: 140px;
     margin: 0 auto;
     border-radius: 50%;
     overflow: hidden;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
     background: white;
     display: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* 토리가 말할 때 애니메이션 */
+.survey-tori-face.speaking {
+    animation: toriSpeaking 0.8s ease-in-out infinite;
+}
+
+@keyframes toriSpeaking {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 6px 25px rgba(255, 183, 77, 0.4);
+    }
 }
 
 .tori-face-img {
@@ -606,18 +623,88 @@ body {
     font-weight: 600;
 }
 
-/* 토리 이미지 없을 때 더 큰 텍스트 */
+/* 발달 검사용 말풍선 (토리 이미지 있을 때) */
 .question-bubble-large {
-    min-height: 150px;
-    padding: 30px 25px;
-    display: block;
+    height: 280px;
+    padding: 40px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     overflow-wrap: break-word;
     word-break: keep-all;
+    overflow-y: auto;
+    position: relative;
+    margin-top: 15px;
+    margin-bottom: 20px;
+}
+
+/* 발달 검사용 말풍선 삼각형 (위쪽 중앙) */
+.question-bubble-large::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 20px solid transparent;
+    border-right: 20px solid transparent;
+    border-bottom: 20px solid white;
+    z-index: 10;
 }
 
 .question-bubble-large .question-text {
-    font-size: 22px;
-    line-height: 1.7;
+    font-size: 26px;
+    line-height: 1.8;
+}
+
+/* 부모 설문용 큰 말풍선 (텍스트 + 이미지 포함) */
+.question-bubble-with-image {
+    padding: 25px;
+    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex: 1;
+    margin: 0 20px 20px 20px;
+}
+
+/* 삼각형을 왼쪽 아래로 이동 */
+.question-bubble-with-image::before {
+    top: auto;
+    bottom: -10px;
+    left: 30px;
+    transform: none;
+    border-left: 10px solid transparent;
+    border-right: 10px solid transparent;
+    border-top: 10px solid white;
+    border-bottom: none;
+}
+
+.question-bubble-with-image .question-text {
+    font-size: 20px;
+    line-height: 1.6;
+    margin-bottom: 0;
+}
+
+/* 말풍선 안의 이미지 래퍼 */
+.question-image-wrapper {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+}
+
+.question-bubble-with-image .question-image {
+    max-width: 100%;
+    max-height: 350px;
+    object-fit: contain;
+    display: block;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    background: none !important;
+    border: none !important;
 }
 
 .question-image-container {
@@ -737,33 +824,44 @@ body {
         rgba(255, 230, 240, 0.5) 50%,
         rgba(255, 255, 255, 1) 100%
     );
-    overflow-y: auto;
+    overflow: hidden;
 }
 
 .result-container {
     padding: 60px 20px 30px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    gap: 15px;
 }
 
 .result-header {
     text-align: center;
-    margin-bottom: 30px;
+    flex-shrink: 0;
 }
 
 .tori-face-large {
-    width: 100px;
-    height: 100px;
-    margin: 0 auto 20px;
+    width: 90px;
+    height: 90px;
+    margin: 0 auto 12px;
     border-radius: 50%;
     overflow: hidden;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
     background: white;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* 결과 페이지 토리가 말할 때 애니메이션 */
+.tori-face-large.speaking {
+    animation: toriSpeaking 0.8s ease-in-out infinite;
 }
 
 .result-title {
-    font-size: 28px;
+    font-size: 32px;
     font-weight: 800;
     color: #1a1a1a;
-    margin-bottom: 10px;
+    margin-bottom: 0;
 }
 
 /* 결과 상태별 스타일 */
@@ -782,8 +880,11 @@ body {
 .result-content {
     background: white;
     border-radius: 20px;
-    padding: 30px 20px;
+    padding: 25px 20px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 }
 
 .result-score {
@@ -792,6 +893,7 @@ body {
     background: linear-gradient(135deg, #FEE500 0%, #FFD700 100%);
     border-radius: 15px;
     margin-bottom: 20px;
+    flex-shrink: 0;
 }
 
 /* 결과 상태별 점수 배경색 */
@@ -830,23 +932,24 @@ body {
 }
 
 .score-number {
-    font-size: 48px;
+    font-size: 42px;
     font-weight: 800;
     color: #1a1a1a;
 }
 
 .result-message {
     text-align: center;
-    padding: 20px;
-    margin-bottom: 30px;
+    padding: 10px;
+    margin-bottom: 20px;
+    flex-shrink: 0;
 }
 
 #result-message-text {
     font-size: 18px;
-    line-height: 1.8;
+    line-height: 1.7;
     color: #333;
     font-weight: 600;
-    min-height: 80px;
+    word-break: keep-all;
 }
 
 /* 타이핑 효과 애니메이션 - 커서 제거 */
@@ -855,14 +958,18 @@ body {
 }
 
 .result-detail {
-    margin-bottom: 30px;
+    margin-bottom: 0;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
 }
 
 .result-detail h3 {
     font-size: 18px;
     font-weight: 700;
     color: #ff9800;
-    margin-bottom: 5px;
+    margin-bottom: 10px;
     text-align: center;
 }
 
@@ -870,10 +977,10 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px;
+    padding: 10px 12px;
     background: #f8f9fa;
     border-radius: 10px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
 }
 
 .question-number {
@@ -902,9 +1009,9 @@ body {
 /* 제품 추천 그리드 */
 .product-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-    margin-top: 20px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 15px;
     animation: fadeInUp 0.6s ease-out;
 }
 
@@ -941,8 +1048,31 @@ body {
 .product-image {
     width: 100%;
     height: 80px;
-    object-fit: contain;
+    object-fit: cover;
     margin-bottom: 10px;
+    border-radius: 8px;
+    transform: scale(1.1);
+}
+
+.product-image-wrapper {
+    width: 100%;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+    background: #f5f5f5;
+    border-radius: 8px;
+}
+
+.product-loading {
+    font-size: 11px;
+    color: #999;
+}
+
+.product-no-image {
+    font-size: 11px;
+    color: #999;
 }
 
 .product-name {
@@ -955,7 +1085,7 @@ body {
 
 .restart-btn {
     width: 100%;
-    padding: 15px;
+    padding: 16px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
     border: none;
@@ -965,6 +1095,7 @@ body {
     cursor: pointer;
     transition: transform 0.2s;
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    flex-shrink: 0;
 }
 
 .restart-btn:hover {

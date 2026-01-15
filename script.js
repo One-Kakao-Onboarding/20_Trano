@@ -124,26 +124,231 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentQuestionIndex = 0;
     let userAnswers = [];
 
+    // TTS 발현 여부 (부모 설문 결과에 따라 결정)
+    let enableTTS = false;
+
+    /**
+     * 부모 설문 결과를 기반으로 TTS 발현 여부 판단
+     * @param {Array} answers - userAnswers 배열
+     * @returns {boolean} - TTS 발현 여부
+     */
+    function shouldEnableTTS(answers) {
+        // 오답 문항 번호 추출 (1-based index)
+        const wrongQuestions = answers
+            .map((answer, index) => (!answer.isCorrect ? index + 1 : null))
+            .filter(q => q !== null);
+
+        const wrongSet = new Set(wrongQuestions);
+        const wrongCount = wrongQuestions.length;
+
+        // TTS 발현 조건 체크
+        const ttsPatterns = [
+            // 2개 틀림
+            [1, 3], [1, 4], [2, 3], [2, 4],
+            // 3개 틀림
+            [1, 2, 3], [1, 2, 4], [1, 3, 4], [2, 3, 4],
+            // 4개 틀림
+            [1, 2, 3, 4]
+        ];
+
+        // 패턴 매칭
+        for (const pattern of ttsPatterns) {
+            if (pattern.length === wrongCount) {
+                const isMatch = pattern.every(q => wrongSet.has(q));
+                if (isMatch) {
+                    console.log(`✅ TTS 발현 조건 충족: 문항 ${pattern.join(', ')} 오답`);
+                    return true;
+                }
+            }
+        }
+
+        console.log(`❌ TTS 발현 조건 미충족: 오답 문항 ${wrongQuestions.join(', ')}`);
+        return false;
+    }
+
+    // 현재 실행 중인 TTS 제어 변수
+    let currentTTSController = null;
+
+    /**
+     * TTS를 완전히 중지하는 함수
+     */
+    function stopTTS() {
+        // 컨트롤러가 있으면 중단
+        if (currentTTSController) {
+            currentTTSController.abort = true;
+        }
+
+        // 음성 합성 중지
+        if (window.speechSynthesis.speaking) {
+            window.speechSynthesis.cancel();
+        }
+
+        // 토리 애니메이션 중지
+        toggleToriSpeakingAnimation(false);
+
+        console.log('✋ TTS 중지됨');
+    }
+
+    /**
+     * TTS로 텍스트를 읽어주는 함수
+     * @param {string} text - 읽어줄 텍스트
+     * @returns {Promise} - TTS 완료를 알리는 Promise
+     */
+    function speakText(text) {
+        return new Promise((resolve, reject) => {
+            if (!('speechSynthesis' in window)) {
+                console.warn('TTS not supported');
+                resolve();
+                return;
+            }
+
+            // 기존 음성 중지
+            window.speechSynthesis.cancel();
+
+            // 컨트롤러 객체 생성
+            const controller = { abort: false };
+            currentTTSController = controller;
+
+            // 짧은 딜레이 후 음성 시작 (cancel 처리를 위해)
+            setTimeout(() => {
+                // 중단 요청이 있었으면 실행하지 않음
+                if (controller.abort) {
+                    resolve();
+                    return;
+                }
+
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ko-KR';
+                utterance.rate = 0.9; // 읽는 속도 (0.1 ~ 10)
+                utterance.pitch = 1.0; // 음높이 (0 ~ 2)
+                utterance.volume = 1.0; // 볼륨 (0 ~ 1)
+
+                utterance.onend = () => {
+                    if (!controller.abort) {
+                        console.log('TTS 완료');
+                    }
+                    resolve();
+                };
+
+                utterance.onerror = (event) => {
+                    console.error('TTS 에러:', event);
+                    resolve(); // 에러가 나도 계속 진행
+                };
+
+                window.speechSynthesis.speak(utterance);
+            }, 50);
+        });
+    }
+
+    /**
+     * 토리 이미지에 말하는 애니메이션 추가/제거
+     * @param {boolean} isActive - 애니메이션 활성화 여부
+     */
+    function toggleToriSpeakingAnimation(isActive) {
+        // 설문 페이지 토리
+        const surveyTori = document.getElementById('survey-tori');
+        if (surveyTori) {
+            if (isActive) {
+                surveyTori.classList.add('speaking');
+            } else {
+                surveyTori.classList.remove('speaking');
+            }
+        }
+
+        // 결과 페이지 토리
+        const resultTori = document.querySelector('.tori-face-large');
+        if (resultTori) {
+            if (isActive) {
+                resultTori.classList.add('speaking');
+            } else {
+                resultTori.classList.remove('speaking');
+            }
+        }
+    }
+
+    /**
+     * 아이 설문 질문을 TTS로 읽어주는 함수
+     * @param {string} questionText - 질문 텍스트
+     */
+    async function readQuestionWithTTS(questionText) {
+        if (!enableTTS) return;
+
+        try {
+            // 토리 애니메이션 시작
+            toggleToriSpeakingAnimation(true);
+
+            // 질문 텍스트 읽기
+            await speakText(questionText);
+
+            // 중단 요청 확인
+            if (currentTTSController && currentTTSController.abort) {
+                toggleToriSpeakingAnimation(false);
+                return;
+            }
+
+            // 버튼 안내 멘트 읽기
+            await speakText('아니오 버튼은 왼쪽, 네 버튼은 오른쪽에 있습니다');
+
+            // 토리 애니메이션 종료
+            toggleToriSpeakingAnimation(false);
+        } catch (error) {
+            console.error('TTS 실행 중 오류:', error);
+            toggleToriSpeakingAnimation(false);
+        }
+    }
+
+    /**
+     * 결과 페이지를 TTS로 읽어주는 함수
+     * @param {string} resultTitle - 결과 제목 (위험/주의/안심)
+     * @param {string} resultMessage - 결과 메시지
+     */
+    async function readResultWithTTS(resultTitle, resultMessage) {
+        if (!enableTTS) return;
+
+        try {
+            // 토리 애니메이션 시작
+            toggleToriSpeakingAnimation(true);
+
+            // 결과 제목 읽기
+            await speakText(resultTitle);
+
+            // 중단 요청 확인
+            if (currentTTSController && currentTTSController.abort) {
+                toggleToriSpeakingAnimation(false);
+                return;
+            }
+
+            // 결과 메시지 읽기
+            await speakText(resultMessage);
+
+            // 토리 애니메이션 종료
+            toggleToriSpeakingAnimation(false);
+        } catch (error) {
+            console.error('TTS 실행 중 오류:', error);
+            toggleToriSpeakingAnimation(false);
+        }
+    }
+
     // 카테고리별 제품 추천 데이터 (result.md 기반)
     const productRecommendations = {
         'motor': [
-            { name: '컵쌓기', image: 'https://via.placeholder.com/150?text=컵쌓기', link: 'https://kko.to/cSmxh_Z687' },
-            { name: '미끄럼틀', image: 'https://via.placeholder.com/150?text=미끄럼틀', link: 'https://kko.to/ARDMmQZeEo' },
-            { name: '링끼우기', image: 'https://via.placeholder.com/150?text=링끼우기', link: 'https://kko.to/niB2dV75Br' }
+            { name: '컵쌓기', link: 'https://kko.to/cSmxh_Z687', image: 'https://st.kakaocdn.net/product/gift/product/20220826170316_ccf540dab12d438b88a1a50ba28220d4.jpg' },
+            { name: '미끄럼틀', link: 'https://kko.to/ARDMmQZeEo', image: 'https://st.kakaocdn.net/product/gift/product/20200225110922_fceabf087d3c4dd9ad6f950c509b0905' },
+            { name: '링끼우기', link: 'https://kko.to/niB2dV75Br', image: 'https://st.kakaocdn.net/product/gift/product/20251203085745_d87e6541ebb247a2a2dd9766a77a90c4.jpg' }
         ],
         'cognition': [
-            { name: '도형맞추기', image: 'https://via.placeholder.com/150?text=도형맞추기', link: 'https://kko.kakao.com/2QQc2aoL74' },
-            { name: '비지북', image: 'https://via.placeholder.com/150?text=비지북', link: 'https://kko.to/MN5aJmea-q' }
+            { name: '도형맞추기', link: 'https://kko.kakao.com/2QQc2aoL74', image: 'https://st.kakaocdn.net/product/gift/product/u4jZnJcsCo-TcsErTPPBng/OSPj2WQ16VEVAxF6oNbBi_1mgoMJ24C91XpjQ2GPJDc.jpg' },
+            { name: '비지북', link: 'https://kko.to/MN5aJmea-q', image: 'https://st.kakaocdn.net/product/gift/product/20250124084638_7bc0091ca9c44922a6590624d0982a66.jpg' }
         ],
         'language': [
-            { name: '사운드카드', image: 'https://via.placeholder.com/150?text=사운드카드', link: 'https://kko.to/Iu3GiDafF8' },
-            { name: '플랩북', image: 'https://via.placeholder.com/150?text=플랩북', link: 'https://kko.to/bM8-nC_h9h' },
-            { name: '낱말 벽보', image: 'https://via.placeholder.com/150?text=낱말벽보', link: 'https://kko.to/voohUL9s33' }
+            { name: '사운드카드', link: 'https://kko.to/Iu3GiDafF8', image: 'https://st.kakaocdn.net/product/gift/product/20201223111726_15479f2ce2a840f98e3dd22b8c8bfc7b.jpg' },
+            { name: '플랩북', link: 'https://kko.to/bM8-nC_h9h', image: 'https://st.kakaocdn.net/product/gift/product/SXH2IfpuCrG038xLIeitiw/y03d_Ku_2zTIPR-U5tApL7Jc6_UFd_zj6c9Tq0WzDSU.jpg' },
+            { name: '낱말 벽보', link: 'https://kko.to/voohUL9s33', image: 'https://st.kakaocdn.net/product/gift/product/20250425155441_062ce1a1bc6e424f96f05811a90b6a3b.jpg' }
         ],
         'social': [
-            { name: '역할놀이', image: 'https://via.placeholder.com/150?text=역할놀이', link: 'https://kko.to/MmEcyi3QJP' },
-            { name: '역할놀이2', image: 'https://via.placeholder.com/150?text=역할놀이2', link: 'https://kko.to/gBbg0HWhSN' },
-            { name: '보드게임', image: 'https://via.placeholder.com/150?text=보드게임', link: 'https://kko.to/Q4lyiE1ReH' }
+            { name: '역할놀이', link: 'https://kko.to/MmEcyi3QJP', image: 'https://st.kakaocdn.net/product/gift/product/20260108104252_e7809fb4a3254ad6a75c61f22b22fd7d.jpg' },
+            { name: '역할놀이2', link: 'https://kko.to/gBbg0HWhSN', image: 'https://st.kakaocdn.net/product/gift/product/20200404031915_353209a8016a4fa5ab10368c5771d706' },
+            { name: '보드게임', link: 'https://kko.to/Q4lyiE1ReH', image: 'https://st.kakaocdn.net/product/gift/product/ri8LX3NVFWgOV6Ve3SnTXQ/XU-F6mCNi79PfdcMTCLwAyIoN7jmIuSSyv8YXyOJ2Ks.jpg' }
         ]
     };
 
@@ -175,13 +380,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const question = surveyQuestions[index];
         questionText.textContent = question.question;
 
+        // 말풍선 스타일 변경
+        const questionBubble = document.querySelector('.question-bubble');
+        if (questionBubble) {
+            if (surveyType === 'basic') {
+                // 부모 설문: 큰 말풍선 + 이미지 포함
+                questionBubble.className = 'question-bubble question-bubble-with-image';
+            } else {
+                // 발달 검사: 기본 말풍선 (토리 이미지 표시)
+                questionBubble.className = 'question-bubble question-bubble-large';
+            }
+        }
+
         // 기본 설문은 이미지 표시, 발달 검사는 이미지 숨김
-        if (questionImage) {
+        const imageWrapper = document.querySelector('.question-image-wrapper');
+        if (questionImage && imageWrapper) {
             if (surveyType === 'basic' && question.image) {
                 questionImage.src = question.image;
-                questionImage.style.display = 'block';
+                imageWrapper.style.display = 'flex';
             } else {
-                questionImage.style.display = 'none';
+                imageWrapper.style.display = 'none';
             }
         }
 
@@ -193,6 +411,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         progressText.textContent = `${index + 1} / ${surveyQuestions.length}`;
         updatePrevButtonVisibility();
+
+        // 발달검사일 때 TTS 실행
+        if (surveyType === 'developmental' && enableTTS) {
+            // 약간의 딜레이 후 TTS 시작 (이전 TTS 완전 중지 및 화면 전환 대기)
+            setTimeout(() => {
+                readQuestionWithTTS(question.question);
+            }, 500);
+        }
     }
 
     // 뒤로가기 버튼 표시/숨김
@@ -205,6 +431,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // 이전 질문으로 이동
     function goToPreviousQuestion() {
         if (currentQuestionIndex > 0) {
+            // 이전 질문으로 이동 시 TTS 중지
+            if (enableTTS && surveyType === 'developmental') {
+                stopTTS();
+            }
+
             currentQuestionIndex--;
             userAnswers.pop();  // 마지막 답변 제거
             showQuestion(currentQuestionIndex);
@@ -213,6 +444,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function answerQuestion(answer) {
         const currentQuestion = surveyQuestions[currentQuestionIndex];
+
+        // 답변 시 TTS 완전 중지
+        if (enableTTS && surveyType === 'developmental') {
+            stopTTS();
+        }
 
         if (surveyType === 'basic') {
             // 기본 설문: 정답/오답 기록
@@ -275,6 +511,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 결과 출력 (기본 설문 / 발달 검사 분기)
     function showResults() {
+        // 결과 페이지 표시 전 TTS 중지
+        if (enableTTS && surveyType === 'developmental') {
+            stopTTS();
+        }
+
         surveyPage.classList.remove('active');
         resultPage.classList.add('active');
 
@@ -287,6 +528,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (surveyType === 'basic') {
             // 기본 설문: 정답/오답 표시
             const correctCount = userAnswers.filter(a => a.isCorrect).length;
+
+            // TTS 발현 여부 판단 및 저장
+            enableTTS = shouldEnableTTS(userAnswers);
 
             // 결과 제목 표시 (기본)
             const resultTitleElement = document.querySelector('.result-title');
@@ -372,6 +616,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let resultTitle = '';
             let resultMessage = '';
             let resultStyle = '';
+            let weakestCategory = null;
 
             if (criticalYesCount > 0) {
                 // Critical 질문에 하나라도 O가 있으면 위험
@@ -383,8 +628,54 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 일반 질문 중 O가 5개 이하면 주의
                 resultType = 'warning';
                 resultTitle = '주의';
-                resultMessage = '아이의 성장이 조금 느려요!\n두 달 후에 토리가 다시 찾아올게요.';
                 resultStyle = 'warning';
+
+                // 카테고리별 점수 계산 (피드백 + 제품추천 공용) - 4가지 유형
+                const categoryScores = {
+                    'motor': { yes: 0, total: 0 },
+                    'cognition': { yes: 0, total: 0 },
+                    'language': { yes: 0, total: 0 },
+                    'social': { yes: 0, total: 0 }
+                };
+
+                normalAnswers.forEach(answer => {
+                    let mappedCategory = answer.category;
+                    // gross_motor와 fine_motor를 motor로 통합
+                    if (answer.category === 'gross_motor' || answer.category === 'fine_motor') {
+                        mappedCategory = 'motor';
+                    }
+                    console.log('답변 카테고리:', answer.category, '→', mappedCategory, '응답:', answer.userAnswer);
+                    if (categoryScores[mappedCategory]) {
+                        categoryScores[mappedCategory].total++;
+                        if (answer.userAnswer === 'o') categoryScores[mappedCategory].yes++;
+                    }
+                });
+                console.log('카테고리별 점수:', categoryScores);
+
+                // 가장 낮은 카테고리 찾기
+                let lowestRatio = 1;
+                for (const [cat, score] of Object.entries(categoryScores)) {
+                    if (score.total > 0) {
+                        const ratio = score.yes / score.total;
+                        if (ratio < lowestRatio) {
+                            lowestRatio = ratio;
+                            weakestCategory = cat;
+                        }
+                    }
+                }
+
+                // 카테고리별 맞춤 피드백 - 4가지 유형 (쉬운 표현)
+                const categoryFeedbacks = {
+                    'motor': '아이가 몸을 움직이는 것을 조금 어려워해요.',
+                    'cognition': '아이가 생각하는 것을 조금 어려워해요.',
+                    'language': '아이가 말하는 것을 조금 어려워해요.',
+                    'social': '아이가 친구들과 노는 것을 조금 어려워해요.'
+                };
+
+                console.log('가장 약한 카테고리:', weakestCategory, '비율:', lowestRatio);
+                resultMessage = weakestCategory
+                    ? categoryFeedbacks[weakestCategory] + '\n\n두 달 후에 토리가 다시 찾아올게요.'
+                    : '아이의 성장이 조금 느려요!\n두 달 후에 토리가 다시 찾아올게요.';
             } else {
                 // 일반 질문 중 O가 6개 이상이면 안심
                 resultType = 'normal';
@@ -415,6 +706,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 typeText(resultMessageText, resultMessage, 50);
             }, resultTitle.length * 100 + 200);
 
+            // TTS로 결과 읽어주기 (타이핑 효과와 함께)
+            if (enableTTS) {
+                setTimeout(() => {
+                    readResultWithTTS(resultTitle, resultMessage.replace(/\n/g, '. '));
+                }, 500);
+            }
+
             // 영역별 결과 숨기기
             const resultDetailElement = document.querySelector('.result-detail');
 
@@ -424,49 +722,11 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // "주의" 상태일 때만 제품 추천 표시
-            if (resultType === 'warning' && resultDetailElement) {
-                // 카테고리 통합 (gross_motor + fine_motor = motor)
-                const groupedCategoryScores = {
-                    'motor': { yes: 0, total: 0 },
-                    'cognition': { yes: 0, total: 0 },
-                    'language': { yes: 0, total: 0 },
-                    'social': { yes: 0, total: 0 }
-                };
-
-                normalAnswers.forEach(answer => {
-                    let mappedCategory = answer.category;
-
-                    // gross_motor와 fine_motor를 motor로 통합
-                    if (answer.category === 'gross_motor' || answer.category === 'fine_motor') {
-                        mappedCategory = 'motor';
-                    }
-
-                    if (groupedCategoryScores[mappedCategory]) {
-                        groupedCategoryScores[mappedCategory].total++;
-                        if (answer.userAnswer === 'o') {
-                            groupedCategoryScores[mappedCategory].yes++;
-                        }
-                    }
-                });
-
-                // 가장 점수가 낮은 카테고리 찾기
-                let lowestCategory = null;
-                let lowestScore = 1;
-                Object.keys(groupedCategoryScores).forEach(category => {
-                    const scores = groupedCategoryScores[category];
-                    if (scores.total > 0) {
-                        const score = scores.yes / scores.total;
-                        if (score < lowestScore) {
-                            lowestScore = score;
-                            lowestCategory = category;
-                        }
-                    }
-                });
-
+            if (resultType === 'warning' && resultDetailElement && weakestCategory) {
                 // 제품 추천 표시 (타이핑 효과 후 표시)
                 const typingDelay = resultTitle.length * 100 + resultMessage.length * 50 + 500;
                 setTimeout(() => {
-                    if (lowestCategory && productRecommendations[lowestCategory]) {
+                    if (productRecommendations[weakestCategory]) {
                         // 카테고리 한글명
                         const categoryDisplayNames = {
                             'motor': '근육',
@@ -478,9 +738,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         resultDetailElement.style.display = 'block';
                         resultDetailElement.innerHTML = `
                             <h3>아이의 성장을 도울 제품을 추천해요!</h3>
-                            <p style="font-size: 14px; color: #666; margin-bottom: 10px;">${categoryDisplayNames[lowestCategory]} 발달을 위한 추천</p>
+                            <p style="font-size: 14px; color: #666; margin-bottom: 10px;">${categoryDisplayNames[weakestCategory]} 발달을 위한 추천</p>
                             <div class="product-grid">
-                                ${productRecommendations[lowestCategory].map(product => `
+                                ${productRecommendations[weakestCategory].map(product => `
                                     <a href="${product.link}" target="_blank" class="product-card">
                                         <img src="${product.image}" alt="${product.name}" class="product-image">
                                         <p class="product-name">${product.name}</p>
@@ -496,6 +756,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (resultDetailElement) {
                     resultDetailElement.style.display = 'none';
                 }
+            }
+        }
+    }
+
+    // OG 이미지 로드 함수
+    async function loadOgImages() {
+        const wrappers = document.querySelectorAll('.product-image-wrapper[data-link]');
+
+        for (const wrapper of wrappers) {
+            const link = wrapper.dataset.link;
+            if (!link) continue;
+
+            try {
+                const apiUrl = `/api/og-image?url=${encodeURIComponent(link)}`;
+                console.log('OG 이미지 요청:', apiUrl);
+
+                const response = await fetch(apiUrl);
+                const data = await response.json();
+
+                console.log('OG 이미지 응답:', data);
+
+                if (data.success && data.ogImage) {
+                    wrapper.innerHTML = `<img src="${data.ogImage}" alt="상품 이미지" class="product-image">`;
+                } else {
+                    wrapper.innerHTML = `<div class="product-no-image">이미지 없음</div>`;
+                }
+            } catch (error) {
+                console.warn('OG 이미지 로드 실패:', link, error);
+                wrapper.innerHTML = `<div class="product-no-image">로드 실패</div>`;
             }
         }
     }
@@ -519,6 +808,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (restartBtn) {
         restartBtn.addEventListener('click', () => {
+            // 처음으로 돌아갈 때 TTS 중지
+            if (enableTTS) {
+                stopTTS();
+            }
             resultPage.classList.remove('active');
             landingPage.classList.add('active');
         });

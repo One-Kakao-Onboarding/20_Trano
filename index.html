@@ -136,14 +136,12 @@
                         </div>
                     </div>
 
-                    <!-- Question Bubble -->
-                    <div class="question-bubble question-bubble-large">
+                    <!-- Question Bubble (텍스트 + 이미지) -->
+                    <div class="question-bubble question-bubble-with-image">
                         <p id="question-text" class="question-text"></p>
-                    </div>
-
-                    <!-- Question Image -->
-                    <div class="question-image-container">
-                        <img id="question-image" src="" alt="질문 이미지" class="question-image">
+                        <div class="question-image-wrapper">
+                            <img id="question-image" src="" alt="질문 이미지" class="question-image">
+                        </div>
                     </div>
 
                     <!-- Answer Buttons -->
@@ -182,9 +180,9 @@
                                 <h3>영역별 결과</h3>
                                 <div id="answer-details"></div>
                             </div>
-
-                            <button class="restart-btn" id="restart-btn">처음으로 돌아가기</button>
                         </div>
+
+                        <button class="restart-btn" id="restart-btn">처음으로 돌아가기</button>
                     </div>
                 </div>
 
