@@ -175,13 +175,26 @@ document.addEventListener('DOMContentLoaded', () => {
         const question = surveyQuestions[index];
         questionText.textContent = question.question;
 
+        // 말풍선 스타일 변경
+        const questionBubble = document.querySelector('.question-bubble');
+        if (questionBubble) {
+            if (surveyType === 'basic') {
+                // 부모 설문: 큰 말풍선 + 이미지 포함
+                questionBubble.className = 'question-bubble question-bubble-with-image';
+            } else {
+                // 발달 검사: 기본 말풍선 (토리 이미지 표시)
+                questionBubble.className = 'question-bubble question-bubble-large';
+            }
+        }
+
         // 기본 설문은 이미지 표시, 발달 검사는 이미지 숨김
-        if (questionImage) {
+        const imageWrapper = document.querySelector('.question-image-wrapper');
+        if (questionImage && imageWrapper) {
             if (surveyType === 'basic' && question.image) {
                 questionImage.src = question.image;
-                questionImage.style.display = 'block';
+                imageWrapper.style.display = 'flex';
             } else {
-                questionImage.style.display = 'none';
+                imageWrapper.style.display = 'none';
             }
         }
 
