@@ -793,22 +793,9 @@ body {
     min-height: 80px;
 }
 
-/* 타이핑 효과 애니메이션 */
-@keyframes blink {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
-}
-
+/* 타이핑 효과 애니메이션 - 커서 제거 */
 .result-title {
     position: relative;
-    --typing-complete: 0;
-}
-
-.result-title::after {
-    content: '|';
-    animation: blink 0.7s infinite;
-    margin-left: 2px;
-    opacity: calc(1 - var(--typing-complete));
 }
 
 .result-detail {

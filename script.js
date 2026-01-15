@@ -222,13 +222,47 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // 결과 페이지 초기화 함수
+    function resetResultPage() {
+        // 제목 초기화
+        const resultTitleElement = document.querySelector('.result-title');
+        if (resultTitleElement) {
+            resultTitleElement.textContent = '';
+            resultTitleElement.className = 'result-title';
+        }
+
+        // 점수 박스 초기화
+        const resultScoreElement = document.querySelector('.result-score');
+        if (resultScoreElement) {
+            resultScoreElement.className = 'result-score';
+            resultScoreElement.style.display = 'block';
+        }
+
+        // 메시지 초기화
+        const resultMessageText = document.getElementById('result-message-text');
+        if (resultMessageText) {
+            resultMessageText.textContent = '';
+            resultMessageText.style.whiteSpace = 'normal';
+        }
+
+        // 영역별 결과 초기화
+        const resultDetailElement = document.querySelector('.result-detail');
+        if (resultDetailElement) {
+            // 내부 HTML을 완전히 재생성
+            resultDetailElement.innerHTML = '<h3>영역별 결과</h3><div id="answer-details"></div>';
+            resultDetailElement.style.display = 'none';
+        }
+    }
+
     // 결과 출력 (기본 설문 / 발달 검사 분기)
     function showResults() {
         surveyPage.classList.remove('active');
         resultPage.classList.add('active');
 
+        // 결과 페이지 완전 초기화
+        resetResultPage();
+
         const answerDetails = document.getElementById('answer-details');
-        answerDetails.innerHTML = '';
         const resultMessageText = document.getElementById('result-message-text');
 
         if (surveyType === 'basic') {
@@ -240,7 +274,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (resultTitleElement) {
                 resultTitleElement.textContent = '발달 검사 완료!';
                 resultTitleElement.className = 'result-title';
-                resultTitleElement.style.removeProperty('--typing-complete');
             }
 
             // 점수 박스 표시
@@ -266,11 +299,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const resultDetailElement = document.querySelector('.result-detail');
             if (resultDetailElement) {
                 resultDetailElement.style.display = 'block';
-                // 제목 변경
+                // 제목을 "답변 내역"으로 변경
                 const detailTitle = resultDetailElement.querySelector('h3');
                 if (detailTitle) {
                     detailTitle.textContent = '답변 내역';
                     detailTitle.style.color = '#1a1a1a';
+                    detailTitle.style.textAlign = 'left';
                 }
             }
 
@@ -432,10 +466,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 index++;
             } else {
                 clearInterval(interval);
-                // 타이핑 완료 시 커서 제거
-                if (element.classList.contains('result-title')) {
-                    element.style.setProperty('--typing-complete', '1');
-                }
             }
         }, speed);
     }
