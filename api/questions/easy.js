@@ -5,6 +5,17 @@ import { buildMessages, buildRetryMessages, validateEasyText, PROMPT_VERSION } f
 const MAX_RETRY_COUNT = 2;
 
 /**
+ * 배열에서 랜덤으로 N개를 선택합니다.
+ * @param {Array} array - 원본 배열
+ * @param {number} n - 선택할 개수
+ * @returns {Array} 랜덤으로 선택된 요소들
+ */
+function getRandomItems(array, n) {
+  const shuffled = [...array].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, n);
+}
+
+/**
  * GPT API로 텍스트를 쉬운 말로 변환합니다.
  * 유효성 검사 실패 시 최대 MAX_RETRY_COUNT번 재시도합니다.
  * @param {string} originalText - 원본 텍스트
@@ -19,7 +30,7 @@ async function convertToEasyText(originalText) {
     temperature: 0.7
   });
 
-  let easyText = completion.choices[0].message.content.trim();
+  let easyText = completion.choices[0].message.content.trim().replace(/"/g, '');
   let validation = validateEasyText(easyText);
 
   // 유효성 검사 통과 시 바로 반환
@@ -40,7 +51,7 @@ async function convertToEasyText(originalText) {
       temperature: 0.5 // 재시도 시 더 일관된 결과를 위해 낮춤
     });
 
-    easyText = completion.choices[0].message.content.trim();
+    easyText = completion.choices[0].message.content.trim().replace(/"/g, '');
     validation = validateEasyText(easyText);
 
     if (validation.isValid) {
@@ -87,40 +98,42 @@ export default async function handler(req, res) {
 
     let questions = [];
 
-    // limit 파라미터가 있으면 각 영역별로 N개씩 가져오기
+    // limit 파라미터가 있으면 각 영역별로 N개씩 랜덤으로 가져오기
     if (age && limitPerCategory && !category) {
-      // 1. critical 질문 먼저 가져오기 (2개)
+      // 1. critical 질문 먼저 가져오기 (2개 랜덤)
       const { data: criticalData, error: criticalError } = await supabase
         .from('questions')
         .select('*')
         .eq('target_age_months', parseInt(age, 10))
-        .eq('category', 'critical')
-        .limit(2);
+        .eq('category', 'critical');
 
       if (criticalError) {
         console.warn('Critical category fetch warning:', criticalError);
       }
-      if (criticalData) {
-        questions.push(...criticalData);
+      if (criticalData && criticalData.length > 0) {
+        const randomCritical = getRandomItems(criticalData, 2);
+        questions.push(...randomCritical);
       }
 
-      // 2. 나머지 카테고리에서 각 2개씩 가져오기
+      // 2. 나머지 카테고리에서 각 N개씩 랜덤으로 가져오기
       const categories = ['gross_motor', 'fine_motor', 'cognition', 'language', 'social'];
 
       for (const cat of categories) {
+        // 해당 카테고리의 모든 질문 가져오기
         const { data, error } = await supabase
           .from('questions')
           .select('*')
           .eq('target_age_months', parseInt(age, 10))
-          .eq('category', cat)
-          .limit(limitPerCategory);
+          .eq('category', cat);
 
         if (error) {
           console.warn(`Category ${cat} fetch warning:`, error);
           continue;
         }
-        if (data) {
-          questions.push(...data);
+        if (data && data.length > 0) {
+          // 랜덤으로 N개 선택
+          const randomQuestions = getRandomItems(data, limitPerCategory);
+          questions.push(...randomQuestions);
         }
       }
     } else {

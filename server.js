@@ -14,6 +14,7 @@ const __dirname = dirname(__filename);
 // API 핸들러 동적 import (환경변수 로드 후)
 const { default: questionsHandler } = await import('./api/questions/index.js');
 const { default: easyHandler } = await import('./api/questions/easy.js');
+const { default: ogImageHandler } = await import('./api/og-image.js');
 
 const PORT = 3000;
 
@@ -71,6 +72,8 @@ const server = http.createServer(async (req, res) => {
       await questionsHandler(req, res);
     } else if (url.pathname === '/api/questions/easy' && req.method === 'GET') {
       await easyHandler(req, res);
+    } else if (url.pathname === '/api/og-image' && req.method === 'GET') {
+      await ogImageHandler(req, res);
     }
     // 정적 파일 서빙
     else {
