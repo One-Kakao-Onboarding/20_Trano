@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Page navigation elements
     const landingPage = document.getElementById('landing-page');
     const chatRoomPage = document.getElementById('chat-room-page');
+    const parentSurveyIntroPage = document.getElementById('parent-survey-intro-page');
     const surveyPage = document.getElementById('survey-page');
     const resultPage = document.getElementById('result-page');
     const infoPage = document.getElementById('info-page'); // 추가됨
@@ -54,6 +55,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const goToInfoBtn = document.getElementById('go-to-info-btn');
     const submitInfoBtn = document.getElementById('submit-info-btn');
     const restartBtn = document.getElementById('restart-btn');
+    const startParentSurveyBtn = document.getElementById('start-parent-survey-btn');
     const genderBtns = document.querySelectorAll('.gender-btn');
 
     const loadingPage = document.getElementById('loading-page');
@@ -362,6 +364,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (startSurveyTrigger) {
         startSurveyTrigger.addEventListener('click', () => {
+            // 부모 설문 안내 페이지로 이동
+            chatRoomPage.classList.remove('active');
+            parentSurveyIntroPage.classList.add('active');
+        });
+    }
+
+    if (startParentSurveyBtn) {
+        startParentSurveyBtn.addEventListener('click', () => {
             startSurvey();
         });
     }
@@ -371,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
         surveyQuestions = [...BASIC_SURVEY_QUESTIONS];  // 기본 질문으로 복원
         currentQuestionIndex = 0;
         userAnswers = [];
-        chatRoomPage.classList.remove('active');
+        parentSurveyIntroPage.classList.remove('active');
         surveyPage.classList.add('active');
         showQuestion(currentQuestionIndex);
     }
@@ -516,6 +526,17 @@ document.addEventListener('DOMContentLoaded', () => {
             stopTTS();
         }
 
+        if (surveyType === 'basic') {
+            // 기본 설문: TTS 발현 여부만 판단하고 바로 아이 정보 입력 페이지로 이동
+            enableTTS = shouldEnableTTS(userAnswers);
+
+            // 결과 페이지를 표시하지 않고 바로 아이 정보 입력 페이지로 이동
+            surveyPage.classList.remove('active');
+            infoPage.classList.add('active');
+            return; // 여기서 함수 종료
+        }
+
+        // 발달 검사인 경우에만 결과 페이지 표시
         surveyPage.classList.remove('active');
         resultPage.classList.add('active');
 
@@ -525,75 +546,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const answerDetails = document.getElementById('answer-details');
         const resultMessageText = document.getElementById('result-message-text');
 
-        if (surveyType === 'basic') {
-            // 기본 설문: 정답/오답 표시
-            const correctCount = userAnswers.filter(a => a.isCorrect).length;
-
-            // TTS 발현 여부 판단 및 저장
-            enableTTS = shouldEnableTTS(userAnswers);
-
-            // 결과 제목 표시 (기본)
-            const resultTitleElement = document.querySelector('.result-title');
-            if (resultTitleElement) {
-                resultTitleElement.textContent = '발달 검사 완료!';
-                resultTitleElement.className = 'result-title';
-            }
-
-            // 점수 박스 표시
-            const resultScoreElement = document.querySelector('.result-score');
-            if (resultScoreElement) {
-                resultScoreElement.style.display = 'block';
-                resultScoreElement.className = 'result-score';
-            }
-
-            document.getElementById('correct-count').textContent = correctCount;
-
-            if (correctCount === 4) {
-                resultMessageText.textContent = '완벽해요! 모든 질문을 올바르게 이해하셨네요!';
-            } else if (correctCount >= 3) {
-                resultMessageText.textContent = '잘하셨어요! 대부분의 질문을 이해하셨네요!';
-            } else if (correctCount >= 2) {
-                resultMessageText.textContent = '좋아요! 조금만 더 연습하면 완벽할 거예요!';
-            } else {
-                resultMessageText.textContent = '괜찮아요! 토리와 함께 천천히 배워가요!';
-            }
-
-            // 영역별 결과 표시
-            const resultDetailElement = document.querySelector('.result-detail');
-            if (resultDetailElement) {
-                resultDetailElement.style.display = 'block';
-                // 제목을 "답변 내역"으로 변경
-                const detailTitle = resultDetailElement.querySelector('h3');
-                if (detailTitle) {
-                    detailTitle.textContent = '답변 내역';
-                    detailTitle.style.color = '#1a1a1a';
-                    detailTitle.style.textAlign = 'left';
-                }
-            }
-
-            userAnswers.forEach((answer, index) => {
-                const detailDiv = document.createElement('div');
-                detailDiv.className = 'answer-detail-item';
-                detailDiv.innerHTML = `
-                    <span class="question-number">질문 ${index + 1}</span>
-                    <span class="${answer.isCorrect ? 'answer-correct' : 'answer-incorrect'}">
-                        ${answer.isCorrect ? '정답' : '오답'}
-                    </span>
-                    <span class="user-answer-text">답변: ${answer.userAnswer === 'o' ? '네' : '아니요'}</span>
-                `;
-                answerDetails.appendChild(detailDiv);
-            });
-
-            // 3초 후 아이 정보 입력 페이지로 이동
-            setTimeout(() => {
-                if (resultPage.classList.contains('active')) {
-                    resultPage.classList.remove('active');
-                    infoPage.classList.add('active');
-                }
-            }, 3000);
-        } else {
-            // 발달 검사: 영역별 결과 표시 및 위험도 판단
-            const categoryNames = {
+        // 발달 검사: 영역별 결과 표시 및 위험도 판단
+        const categoryNames = {
                 'critical': '핵심 발달 지표',
                 'gross_motor': '대근육 운동',
                 'fine_motor': '소근육 운동',
@@ -757,7 +711,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     resultDetailElement.style.display = 'none';
                 }
             }
-        }
     }
 
     // OG 이미지 로드 함수
@@ -808,11 +761,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (restartBtn) {
         restartBtn.addEventListener('click', () => {
-            // 처음으로 돌아갈 때 TTS 중지
+            // 처음으로 돌아갈 때 TTS 중지 및 초기화
             if (enableTTS) {
                 stopTTS();
             }
-            resultPage.classList.remove('active');
+            enableTTS = false;
+
+            // 모든 페이지 비활성화
+            chatRoomPage.classList.remove('active');
+            parentSurveyIntroPage.classList.remove('active');
+            surveyPage.classList.remove('active');
+            if (resultPage) resultPage.classList.remove('active');
+            infoPage.classList.remove('active');
+            loadingPage.classList.remove('active');
+
+            // 랜딩 페이지로 이동
             landingPage.classList.add('active');
         });
     }

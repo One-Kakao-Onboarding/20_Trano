@@ -1117,6 +1117,94 @@ body {
     background: rgba(254, 229, 0, 0.1);
 }
 
+/* ========== Parent Survey Intro Page ========== */
+#parent-survey-intro-page {
+    background: linear-gradient(180deg,
+        rgba(255, 249, 230, 1) 0%,
+        rgba(255, 255, 255, 1) 100%
+    );
+}
+
+.intro-container {
+    padding: 80px 30px 40px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+}
+
+.intro-tori {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    background: white;
+}
+
+.intro-tori-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.intro-speech-bubble {
+    background: white;
+    padding: 30px 25px;
+    border-radius: 25px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    position: relative;
+    max-width: 350px;
+}
+
+.intro-speech-bubble::before {
+    content: '';
+    position: absolute;
+    top: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+    border-bottom: 15px solid white;
+}
+
+.intro-text {
+    font-size: 16px;
+    line-height: 1.8;
+    color: #333;
+    text-align: center;
+    margin: 0;
+    word-break: keep-all;
+}
+
+.start-parent-survey-btn {
+    width: calc(100% - 60px);
+    max-width: 350px;
+    padding: 18px;
+    background: linear-gradient(135deg, #FEE500 0%, #FFD700 100%);
+    color: #333;
+    border: none;
+    border-radius: 15px;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(254, 229, 0, 0.3);
+}
+
+.start-parent-survey-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(254, 229, 0, 0.4);
+}
+
+.start-parent-survey-btn:active {
+    transform: translateY(0);
+}
+
 /* ========== Info Page ========== */
 #info-page {
     background: white;
