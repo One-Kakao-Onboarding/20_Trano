@@ -476,6 +476,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 category: currentQuestion.category,
                 questionText: currentQuestion.question
             });
+
+            // Critical 질문에 X(아니요) 답변이 나오면 즉시 결과 페이지로 이동
+            if (currentQuestion.category === 'critical' && answer === 'x') {
+                console.log('⚠️ Critical 질문에 X 답변 - 즉시 결과 페이지로 이동');
+                showResults();
+                return;
+            }
         }
 
         currentQuestionIndex++;
@@ -560,9 +567,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const criticalAnswers = userAnswers.filter(a => a.category === 'critical');
             const normalAnswers = userAnswers.filter(a => a.category !== 'critical');
 
-            // Critical 질문 중 'O' 개수
-            const criticalYesCount = criticalAnswers.filter(a => a.userAnswer === 'o').length;
-            // 일반 질문 중 'O' 개수
+            // Critical 질문 중 'X(아니요)' 개수
+            const criticalNoCount = criticalAnswers.filter(a => a.userAnswer === 'x').length;
+            // 일반 질문 중 'O(예)' 개수
             const normalYesCount = normalAnswers.filter(a => a.userAnswer === 'o').length;
 
             // 결과 판단
@@ -572,8 +579,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let resultStyle = '';
             let weakestCategory = null;
 
-            if (criticalYesCount > 0) {
-                // Critical 질문에 하나라도 O가 있으면 위험
+            if (criticalNoCount > 0) {
+                // Critical 질문에 하나라도 X(아니요)가 있으면 위험
                 resultType = 'critical';
                 resultTitle = '위험';
                 resultMessage = '아이의 성장이 느려요.\n빨리 가까운 병원을 가야해요.';
