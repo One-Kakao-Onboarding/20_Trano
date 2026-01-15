@@ -1,21 +1,58 @@
 import { supabase } from '../_lib/supabase.js';
 import { openai } from '../_lib/openai.js';
-import { buildMessages, PROMPT_VERSION } from '../_lib/prompts.js';
+import { buildMessages, buildRetryMessages, validateEasyText, PROMPT_VERSION } from '../_lib/prompts.js';
+
+const MAX_RETRY_COUNT = 2;
 
 /**
  * GPT API로 텍스트를 쉬운 말로 변환합니다.
+ * 유효성 검사 실패 시 최대 MAX_RETRY_COUNT번 재시도합니다.
  * @param {string} originalText - 원본 텍스트
- * @returns {Promise<string>} 변환된 쉬운 텍스트
+ * @returns {Promise<{text: string, validationPassed: boolean}>} 변환 결과
  */
 async function convertToEasyText(originalText) {
-  const completion = await openai.chat.completions.create({
+  // 첫 번째 시도
+  let completion = await openai.chat.completions.create({
     model: 'gpt-4',
     messages: buildMessages(originalText),
     max_tokens: 300,
     temperature: 0.7
   });
 
-  return completion.choices[0].message.content.trim();
+  let easyText = completion.choices[0].message.content.trim();
+  let validation = validateEasyText(easyText);
+
+  // 유효성 검사 통과 시 바로 반환
+  if (validation.isValid) {
+    console.log(`✅ 유효성 검사 통과: "${easyText.substring(0, 30)}..."`);
+    return { text: easyText, validationPassed: true };
+  }
+
+  // 재시도 로직
+  for (let retry = 1; retry <= MAX_RETRY_COUNT; retry++) {
+    console.log(`⚠️ 유효성 검사 실패 (시도 ${retry}/${MAX_RETRY_COUNT}): ${validation.errors.join(', ')}`);
+    console.log(`   원본: "${easyText}"`);
+
+    completion = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: buildRetryMessages(originalText, easyText, validation.errors),
+      max_tokens: 300,
+      temperature: 0.5 // 재시도 시 더 일관된 결과를 위해 낮춤
+    });
+
+    easyText = completion.choices[0].message.content.trim();
+    validation = validateEasyText(easyText);
+
+    if (validation.isValid) {
+      console.log(`✅ 재시도 ${retry}회 후 유효성 검사 통과: "${easyText.substring(0, 30)}..."`);
+      return { text: easyText, validationPassed: true };
+    }
+  }
+
+  // 최대 재시도 후에도 실패하면 마지막 결과 반환 (경고와 함께)
+  console.warn(`❌ 최대 재시도 후에도 유효성 검사 실패: ${validation.errors.join(', ')}`);
+  console.warn(`   최종 텍스트: "${easyText}"`);
+  return { text: easyText, validationPassed: false };
 }
 
 /**
@@ -141,26 +178,32 @@ export default async function handler(req, res) {
         let fromCache = true;
 
         // 캐시에 없으면 GPT로 변환
+        let validationPassed = true;
         if (!easyText) {
           fromCache = false;
           try {
-            easyText = await convertToEasyText(q.question_text);
+            const result = await convertToEasyText(q.question_text);
+            easyText = result.text;
+            validationPassed = result.validationPassed;
 
-            // 캐시에 저장 (실패해도 계속 진행)
-            await supabase.from('easy_text_cache').upsert(
-              {
-                question_id: q.id,
-                original_text: q.question_text,
-                easy_text: easyText,
-                gpt_model: 'gpt-4',
-                prompt_version: PROMPT_VERSION
-              },
-              { onConflict: 'question_id,prompt_version' }
-            );
+            // 유효성 검사 통과한 경우에만 캐시에 저장
+            if (validationPassed) {
+              await supabase.from('easy_text_cache').upsert(
+                {
+                  question_id: q.id,
+                  original_text: q.question_text,
+                  easy_text: easyText,
+                  gpt_model: 'gpt-4',
+                  prompt_version: PROMPT_VERSION
+                },
+                { onConflict: 'question_id,prompt_version' }
+              );
+            }
           } catch (gptError) {
             console.error(`GPT conversion failed for question ${q.id}:`, gptError);
             // GPT 실패 시 원본 텍스트 사용
             easyText = q.question_text;
+            validationPassed = false;
           }
         }
 
@@ -170,7 +213,8 @@ export default async function handler(req, res) {
           questionText: q.question_text,
           easyText: easyText,
           targetAgeMonths: q.target_age_months,
-          fromCache: fromCache
+          fromCache: fromCache,
+          validationPassed: validationPassed
         };
       })
     );
