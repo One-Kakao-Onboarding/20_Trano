@@ -1,3 +1,83 @@
+/**
+ * @fileoverview 카나나 토리 - 발달검사 앱 스타일시트
+ * @description K-DST 기반 아동 발달검사 서비스의 UI 스타일 정의
+ * @version 1.0.0
+ */
+
+/* ============================================================================
+   CSS Custom Properties (Design Tokens)
+   ============================================================================ */
+:root {
+    /* 색상 - Primary */
+    --color-primary: #FEE500;
+    --color-primary-dark: #FFD700;
+    --color-primary-light: #FFF9E6;
+
+    /* 색상 - Secondary (Pink) */
+    --color-secondary: #ff4081;
+    --color-secondary-light: #ffb3d9;
+    --color-secondary-dark: #ff80bf;
+
+    /* 색상 - 결과 상태 */
+    --color-danger: #ff4444;
+    --color-danger-light: #ff6b6b;
+    --color-warning: #ff9800;
+    --color-warning-light: #ffa94d;
+    --color-success: #37b24d;
+    --color-success-light: #51cf66;
+
+    /* 색상 - Neutral */
+    --color-text-primary: #1a1a1a;
+    --color-text-secondary: #333;
+    --color-text-tertiary: #666;
+    --color-text-muted: #999;
+    --color-background: #ffffff;
+    --color-background-alt: #f5f5f5;
+    --color-background-card: #f8f9fa;
+    --color-border: #ddd;
+    --color-border-light: #eee;
+
+    /* 그림자 */
+    --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 15px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 4px 20px rgba(0, 0, 0, 0.15);
+    --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.5);
+
+    /* 크기 */
+    --phone-width: 375px;
+    --phone-height: 812px;
+    --border-radius-sm: 10px;
+    --border-radius-md: 15px;
+    --border-radius-lg: 20px;
+    --border-radius-xl: 25px;
+    --border-radius-full: 50px;
+
+    /* 폰트 */
+    --font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Segoe UI', 'Malgun Gothic', sans-serif;
+    --font-size-xs: 11px;
+    --font-size-sm: 12px;
+    --font-size-base: 14px;
+    --font-size-md: 16px;
+    --font-size-lg: 18px;
+    --font-size-xl: 22px;
+    --font-size-2xl: 28px;
+
+    /* 트랜지션 */
+    --transition-fast: 0.2s ease;
+    --transition-base: 0.3s ease;
+    --transition-slow: 0.4s ease;
+
+    /* 간격 */
+    --spacing-xs: 5px;
+    --spacing-sm: 8px;
+    --spacing-md: 15px;
+    --spacing-lg: 20px;
+    --spacing-xl: 30px;
+}
+
+/* ============================================================================
+   Reset & Base Styles
+   ============================================================================ */
 * {
     margin: 0;
     padding: 0;
@@ -5,13 +85,13 @@
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Segoe UI', 'Malgun Gothic', sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    font-family: var(--font-family);
+    background: linear-gradient(135deg, var(--color-background) 0%, var(--color-background-alt) 100%);
     min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 20px;
+    padding: var(--spacing-lg);
 }
 
 .container {
@@ -23,12 +103,12 @@ body {
 /* ========== Phone Frame ========== */
 .phone-frame {
     position: relative;
-    width: 375px;
-    height: 812px;
-    background: #1a1a1a;
+    width: var(--phone-width);
+    height: var(--phone-height);
+    background: var(--color-text-primary);
     border: 12px solid #2a2a2a;
-    border-radius: 50px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    border-radius: var(--border-radius-full);
+    box-shadow: var(--shadow-xl);
     overflow: hidden;
 }
 
@@ -61,7 +141,7 @@ body {
     height: 100%;
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    transition: opacity var(--transition-base), visibility var(--transition-base);
     overflow-y: auto;
 }
 
@@ -91,12 +171,12 @@ body {
 .section-title {
     font-size: 20px;
     font-weight: 700;
-    color: #1a1a1a;
-    margin-bottom: 15px;
+    color: var(--color-text-primary);
+    margin-bottom: var(--spacing-md);
 }
 
 .section-title.highlight {
-    color: #ff4081;
+    color: var(--color-secondary);
 }
 
 /* My AI Card */
@@ -236,38 +316,6 @@ body {
     flex-shrink: 0;
 }
 
-/* Bottom Input */
-.bottom-input {
-    display: flex;
-    gap: 10px;
-    padding: 15px;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 25px;
-    margin-bottom: 15px;
-}
-
-.bottom-input input {
-    flex: 1;
-    border: none;
-    outline: none;
-    font-size: 14px;
-    color: #999;
-}
-
-.voice-btn {
-    width: 40px;
-    height: 40px;
-    background: #2a2a2a;
-    border: none;
-    border-radius: 50%;
-    font-size: 20px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
 /* ========== Chat Room Page ========== */
 #chat-room-page {
     background: white;
@@ -304,92 +352,6 @@ body {
     font-size: 24px;
     cursor: pointer;
     color: #333;
-}
-
-.chat-date {
-    text-align: center;
-    padding: 15px;
-    font-size: 13px;
-    color: #999;
-}
-
-.chat-messages {
-    padding: 20px;
-    min-height: 400px;
-    margin-bottom: 80px;
-}
-
-.message-group {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 20px;
-}
-
-.nana-avatar-small {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #ffb3d9 0%, #ff80bf 100%);
-    flex-shrink: 0;
-}
-
-.message-content {
-    flex: 1;
-}
-
-.message-sender {
-    font-size: 14px;
-    font-weight: 700;
-    color: #1a1a1a;
-    margin-bottom: 5px;
-}
-
-.message-bubble {
-    background: #f5f5f5;
-    padding: 15px;
-    border-radius: 0 15px 15px 15px;
-    font-size: 14px;
-    line-height: 1.6;
-    color: #333;
-    margin-bottom: 5px;
-}
-
-.message-bubble p {
-    margin-bottom: 10px;
-}
-
-.message-bubble p:last-child {
-    margin-bottom: 0;
-}
-
-.message-bubble a {
-    color: #1e90ff;
-    text-decoration: underline;
-}
-
-.message-time {
-    font-size: 12px;
-    color: #999;
-    padding-left: 10px;
-}
-
-.profile-notice {
-    text-align: center;
-    padding: 20px;
-    margin: 20px 0;
-}
-
-.profile-notice p {
-    font-size: 13px;
-    color: #666;
-    margin-bottom: 10px;
-}
-
-.profile-notice a {
-    font-size: 13px;
-    color: #1a1a1a;
-    text-decoration: underline;
-    font-weight: 600;
 }
 
 /* Tori Profile Section */
@@ -461,48 +423,6 @@ body {
 .empty-chat-text {
     font-size: 15px;
     color: #999;
-}
-
-.chat-input-area {
-    position: fixed;
-    bottom: 15px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: calc(100% - 40px);
-    max-width: 335px;
-    display: flex;
-    gap: 10px;
-    padding: 15px;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 25px;
-}
-
-.chat-input {
-    flex: 1;
-    border: none;
-    outline: none;
-    font-size: 14px;
-}
-
-.add-btn {
-    width: 35px;
-    height: 35px;
-    background: none;
-    border: none;
-    font-size: 28px;
-    cursor: pointer;
-    color: #666;
-}
-
-.voice-btn-chat {
-    width: 40px;
-    height: 40px;
-    background: #2a2a2a;
-    border: none;
-    border-radius: 50%;
-    font-size: 20px;
-    cursor: pointer;
 }
 
 /* Responsive */
@@ -621,12 +541,14 @@ body {
     color: #333;
     text-align: center;
     font-weight: 600;
+    word-break: keep-all;
 }
 
 /* 발달 검사용 말풍선 (토리 이미지 있을 때) */
 .question-bubble-large {
-    height: 280px;
-    padding: 40px 30px;
+    min-height: 200px;
+    max-height: 350px;
+    padding: 30px 25px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -654,8 +576,8 @@ body {
 }
 
 .question-bubble-large .question-text {
-    font-size: 26px;
-    line-height: 1.8;
+    font-size: 22px;
+    line-height: 1.6;
 }
 
 /* 부모 설문용 큰 말풍선 (텍스트 + 이미지 포함) */
@@ -685,6 +607,7 @@ body {
     font-size: 20px;
     line-height: 1.6;
     margin-bottom: 0;
+    word-break: keep-all;
 }
 
 /* 말풍선 안의 이미지 래퍼 */
@@ -866,15 +789,15 @@ body {
 
 /* 결과 상태별 스타일 */
 .result-title.danger {
-    color: #ff4444;
+    color: var(--color-danger);
 }
 
 .result-title.warning {
-    color: #ff9800;
+    color: var(--color-warning);
 }
 
 .result-title.success {
-    color: #37b24d;
+    color: var(--color-success);
 }
 
 .result-content {
@@ -898,30 +821,30 @@ body {
 
 /* 결과 상태별 점수 배경색 */
 .result-score.danger {
-    background: linear-gradient(135deg, #ff6b6b 0%, #ff4444 100%);
+    background: linear-gradient(135deg, var(--color-danger-light) 0%, var(--color-danger) 100%);
 }
 
 .result-score.danger .score-label,
 .result-score.danger .score-number {
-    color: white;
+    color: var(--color-background);
 }
 
 .result-score.warning {
-    background: linear-gradient(135deg, #ffa94d 0%, #ff9800 100%);
+    background: linear-gradient(135deg, var(--color-warning-light) 0%, var(--color-warning) 100%);
 }
 
 .result-score.warning .score-label,
 .result-score.warning .score-number {
-    color: white;
+    color: var(--color-background);
 }
 
 .result-score.success {
-    background: linear-gradient(135deg, #51cf66 0%, #37b24d 100%);
+    background: linear-gradient(135deg, var(--color-success-light) 0%, var(--color-success) 100%);
 }
 
 .result-score.success .score-label,
 .result-score.success .score-number {
-    color: white;
+    color: var(--color-background);
 }
 
 .score-label {
@@ -1115,9 +1038,9 @@ body {
 }
 
 .hospital-search-section h3 {
-    font-size: 16px;
+    font-size: var(--font-size-md);
     font-weight: 700;
-    color: #ff4444;
+    color: var(--color-danger);
     margin-bottom: 4px;
 }
 
@@ -1640,5 +1563,92 @@ body {
 }
 
 .loading-text { padding: 0 20px; }
-.loading-main-msg { font-size: 24px; font-weight: 800; color: #1a1a1a; margin-bottom: 15px; }
+.loading-main-msg { font-size: 24px; font-weight: 800; color: var(--color-text-primary); margin-bottom: var(--spacing-md); }
 .loading-sub-msg { font-size: 15px; font-weight: 600; color: #555; line-height: 1.6; word-break: keep-all; }
+
+/* ============================================================================
+   접근성 (Accessibility)
+   ============================================================================ */
+
+/* Skip Link - 스크린 리더 사용자를 위한 건너뛰기 링크 */
+.skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: var(--color-text-primary);
+    color: var(--color-background);
+    padding: var(--spacing-sm) var(--spacing-md);
+    z-index: 9999;
+    text-decoration: none;
+    font-weight: 600;
+    transition: top var(--transition-fast);
+}
+
+.skip-link:focus {
+    top: 0;
+}
+
+/* Focus Styles - 키보드 네비게이션을 위한 포커스 스타일 */
+button:focus-visible,
+input:focus-visible,
+a:focus-visible,
+[tabindex]:focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+/* 마우스 클릭 시에는 아웃라인 숨기기 */
+button:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+a:focus:not(:focus-visible),
+[tabindex]:focus:not(:focus-visible) {
+    outline: none;
+}
+
+/* Reduced Motion - 사용자 설정 존중 */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .tori-face-large.speaking,
+    .survey-tori-face.speaking {
+        animation: none;
+    }
+}
+
+/* High Contrast Mode - 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+    :root {
+        --color-primary: #FFD700;
+        --color-danger: #ff0000;
+        --color-success: #00aa00;
+        --color-border: #000;
+    }
+
+    .answer-btn {
+        border: 3px solid var(--color-text-primary);
+    }
+
+    .result-content {
+        border: 2px solid var(--color-text-primary);
+    }
+}
+
+/* Screen Reader Only - 시각적으로 숨기되 스크린 리더는 읽을 수 있음 */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}

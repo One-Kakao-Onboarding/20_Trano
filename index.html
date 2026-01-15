@@ -3,10 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="K-DST 기반 아동 발달검사 서비스 - 우리아이 성장지킴이 토리">
+    <meta name="theme-color" content="#FEE500">
+    <meta name="author" content="One-Kakao-Onboarding">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="Kanana - 우리아이 성장지킴이 토리">
+    <meta property="og:description" content="K-DST 기반 아동 발달검사 서비스. AI 토리가 어려운 발달검사를 쉽게 도와드려요.">
+    <meta property="og:image" content="assets/images/tori.png">
+    <meta property="og:site_name" content="Kanana">
+    <meta property="og:locale" content="ko_KR">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Kanana - 우리아이 성장지킴이 토리">
+    <meta name="twitter:description" content="K-DST 기반 아동 발달검사 서비스. AI 토리가 어려운 발달검사를 쉽게 도와드려요.">
+    <meta name="twitter:image" content="assets/images/tori.png">
+
     <title>Kanana - 우리아이 성장지킴이 토리</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- Skip Navigation for Screen Readers -->
+    <a href="#main-content" class="skip-link" aria-label="본문으로 바로가기">본문으로 바로가기</a>
     <div class="container">
         <!-- Phone Frame -->
         <div class="phone-frame">
@@ -14,9 +35,9 @@
             <div class="dynamic-island"></div>
 
             <!-- Phone Screen Content -->
-            <div class="phone-screen">
+            <div class="phone-screen" id="main-content" role="main">
                 <!-- Landing Page (Kanana Home) -->
-                <div id="landing-page" class="page active">
+                <div id="landing-page" class="page active" role="region" aria-label="메인 페이지">
                     <!-- AI Mates Section -->
                     <div class="ai-mates-section">
                         <h2 class="section-title">나의 AI 메이트</h2>
@@ -34,21 +55,21 @@
 
                         <div class="ai-mates-list">
                             <!-- Tori - Our AI Mate (Clickable) -->
-                            <div class="ai-mate-card clickable" id="tori-profile">
+                            <div class="ai-mate-card clickable" id="tori-profile" role="button" tabindex="0" aria-label="우리아이 성장지킴이 토리와 대화하기">
                                 <div class="ai-avatar">
-                                    <img src="tori.png" alt="토리" class="avatar-img">
+                                    <img src="assets/images/tori.png" alt="토리 캐릭터 아이콘" class="avatar-img">
                                 </div>
                                 <div class="ai-info">
                                     <h3>우리아이 </br> 성장지킴이 토리</h3>
                                     <p>어려운 단어는 쏙쏙! </br> 토리가 부모님의 </br> 마음을 아이에게 </br>이어드릴게요.</p>
                                 </div>
-                                <button class="chat-btn">대화</button>
+                                <button class="chat-btn" aria-hidden="true" tabindex="-1">대화</button>
                             </div>
 
                             <!-- Other AI Mates -->
                             <div class="ai-mate-card disabled">
                                 <div class="ai-avatar">
-                                    <img src="ai1.png" alt="사주보는 카도사" class="avatar-img">
+                                    <img src="assets/images/avatars/ai1.png" alt="사주보는 카도사" class="avatar-img">
                                 </div>
                                 <div class="ai-info">
                                     <h3>사주보는 카도사</h3>
@@ -60,7 +81,7 @@
                             <div class="ai-mate-card disabled">
                                 <div class="new-badge">NEW</div>
                                 <div class="ai-avatar">
-                                    <img src="ai2.png" alt="하루 한 장 AI 이슈" class="avatar-img">
+                                    <img src="assets/images/avatars/ai2.png" alt="하루 한 장 AI 이슈" class="avatar-img">
                                 </div>
                                 <div class="ai-info">
                                     <h3>하루 한 장, AI 이슈 ...</h3>
@@ -72,7 +93,7 @@
                             <div class="ai-mate-card disabled">
                                 <div class="new-badge">NEW</div>
                                 <div class="ai-avatar">
-                                    <img src="ai3.png" alt="스피드 오토케어" class="avatar-img">
+                                    <img src="assets/images/avatars/ai3.png" alt="스피드 오토케어" class="avatar-img">
                                 </div>
                                 <div class="ai-info">
                                     <h3>스피드 오토케어</h3>
@@ -83,7 +104,7 @@
 
                             <div class="ai-mate-card disabled">
                                 <div class="ai-avatar">
-                                    <img src="ai4.png" alt="스터디 코칭" class="avatar-img">
+                                    <img src="assets/images/avatars/ai4.png" alt="스터디 코칭" class="avatar-img">
                                 </div>
                                 <div class="ai-info">
                                     <h3>스터디 코칭</h3>
@@ -108,7 +129,7 @@
                     <!-- Tori Profile -->
                     <div class="tori-profile-section">
                         <div class="profile-avatar-large">
-                            <img src="tori.png" alt="토리" class="profile-img">
+                            <img src="assets/images/tori.png" alt="토리" class="profile-img">
                         </div>
                         <h3 class="profile-name">우리아이 성장지킴이 토리</h3>
                         <p class="profile-description">어려운 단어는 쏙쏙! 토리가 부모님의 마음을 </br> 아이에게 이어드릴게요.</p>
@@ -130,7 +151,7 @@
                 <div id="parent-survey-intro-page" class="page">
                     <div class="intro-container">
                         <div class="intro-tori">
-                            <img src="tori.png" alt="토리" class="intro-tori-img">
+                            <img src="assets/images/tori.png" alt="토리" class="intro-tori-img">
                         </div>
                         <div class="intro-speech-bubble">
                             <p class="intro-text">
@@ -146,62 +167,62 @@
                 </div>
 
                 <!-- Survey Page -->
-                <div id="survey-page" class="page">
+                <div id="survey-page" class="page" role="region" aria-label="발달검사 설문">
                     <!-- Survey Header -->
                     <div class="survey-header">
-                        <button id="prev-btn" class="prev-btn">‹</button>
-                        <div class="survey-tori-face" id="survey-tori">
-                            <img src="tori.png" alt="토리" class="tori-face-img">
+                        <button id="prev-btn" class="prev-btn" aria-label="이전 질문으로 돌아가기">‹</button>
+                        <div class="survey-tori-face" id="survey-tori" aria-hidden="true">
+                            <img src="assets/images/tori.png" alt="" class="tori-face-img">
                         </div>
                     </div>
 
                     <!-- Question Bubble (텍스트 + 이미지) -->
-                    <div class="question-bubble question-bubble-with-image">
-                        <p id="question-text" class="question-text"></p>
+                    <div class="question-bubble question-bubble-with-image" role="article" aria-live="polite">
+                        <p id="question-text" class="question-text" aria-live="polite"></p>
                         <div class="question-image-wrapper">
-                            <img id="question-image" src="" alt="질문 이미지" class="question-image">
+                            <img id="question-image" src="" alt="질문 관련 이미지" class="question-image">
                         </div>
                     </div>
 
                     <!-- Answer Buttons -->
-                    <div class="answer-buttons">
-                        <button class="answer-btn x-btn" id="x-btn">✕<br><span>아니요</span></button>
-                        <button class="answer-btn o-btn" id="o-btn">○<br><span>네</span></button>
+                    <div class="answer-buttons" role="group" aria-label="답변 선택">
+                        <button class="answer-btn x-btn" id="x-btn" aria-label="아니요">✕<br><span>아니요</span></button>
+                        <button class="answer-btn o-btn" id="o-btn" aria-label="네">○<br><span>네</span></button>
                     </div>
 
                     <!-- Progress Indicator -->
-                    <div class="progress-indicator">
-                        <span id="progress-text">1 / 4</span>
+                    <div class="progress-indicator" role="status" aria-live="polite">
+                        <span id="progress-text" aria-label="진행 상황">1 / 4</span>
                     </div>
                 </div>
 
                 <!-- Result Page -->
-                <div id="result-page" class="page">
+                <div id="result-page" class="page" role="region" aria-label="검사 결과">
                     <div class="result-container">
                         <div class="result-header">
-                            <div class="tori-face-large">
-                                <img src="tori.png" alt="토리" class="tori-face-img">
+                            <div class="tori-face-large" aria-hidden="true">
+                                <img src="assets/images/tori.png" alt="" class="tori-face-img">
                             </div>
-                            <h2 class="result-title">발달 검사 완료!</h2>
+                            <h2 class="result-title" aria-live="polite">발달 검사 완료!</h2>
                         </div>
 
-                        <div class="result-content">
-                            <div class="result-score">
+                        <div class="result-content" role="article">
+                            <div class="result-score" aria-label="검사 점수">
                                 <p class="score-label">발달 확인 항목</p>
-                                <p class="score-number"><span id="correct-count">0</span> / 10</p>
+                                <p class="score-number" aria-live="polite"><span id="correct-count">0</span> / 10</p>
                             </div>
 
-                            <div class="result-message">
+                            <div class="result-message" aria-live="polite">
                                 <p id="result-message-text"></p>
                             </div>
 
                             <div class="result-detail">
                                 <h3>영역별 결과</h3>
-                                <div id="answer-details"></div>
+                                <div id="answer-details" role="list" aria-label="영역별 검사 결과"></div>
                             </div>
                         </div>
 
-                        <button class="restart-btn" id="restart-btn">처음으로 돌아가기</button>
+                        <button class="restart-btn" id="restart-btn" aria-label="처음으로 돌아가서 다시 검사하기">처음으로 돌아가기</button>
                     </div>
                 </div>
 
@@ -209,7 +230,7 @@
                     <div class="info-container">
                         <div class="info-header">
                             <div class="tori-face-small">
-                                <img src="tori.png" alt="토리" class="tori-face-img">
+                                <img src="assets/images/tori.png" alt="토리" class="tori-face-img">
                             </div>
                             <h2 class="info-title">아이 정보를 알려주세요</h2>
                             <p class="info-subtitle">토리가 아이에게 딱 맞는 설문지를 준비할게요!</p>
@@ -239,9 +260,9 @@
                     </div>
                 </div>
                 <!-- Loading Page -->
-                <div id="loading-page" class="page">
+                <div id="loading-page" class="page" role="status" aria-label="로딩 중" aria-live="polite">
                     <div class="loading-container">
-                        <div class="basket-animation">
+                        <div class="basket-animation" aria-hidden="true">
                             <div class="basket"></div>
                             <div class="acorn acorn-1">🌰</div>
                             <div class="acorn acorn-2">🌰</div>
@@ -254,12 +275,12 @@
                     </div>
                 </div>
 
-                <div id="custom-modal" class="modal-overlay">
+                <div id="custom-modal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title" aria-describedby="modal-message">
                     <div class="modal-content">
-                        <div class="modal-icon">✅</div>
+                        <div class="modal-icon" aria-hidden="true">✅</div>
                         <h3 id="modal-title">등록 완료</h3>
                         <p id="modal-message"></p>
-                        <button id="modal-close-btn">확인</button>
+                        <button id="modal-close-btn" aria-label="모달 닫기">확인</button>
                     </div>
                 </div>
             </div>

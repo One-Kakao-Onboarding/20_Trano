@@ -1,8 +1,29 @@
+/**
+ * @fileoverview 발달검사 질문 조회 및 GPT 변환 API
+ * @description K-DST 발달검사 질문을 GPT-4로 쉬운 말로 변환하여 제공합니다.
+ *              캐싱을 통해 중복 변환을 방지하고 응답 속도를 개선합니다.
+ */
+
 import { supabase } from '../_lib/supabase.js';
 import { openai } from '../_lib/openai.js';
 import { buildMessages, buildRetryMessages, validateEasyText, PROMPT_VERSION } from '../_lib/prompts.js';
 
+// ============================================================================
+// 상수 정의
+// ============================================================================
+
+/** @constant {number} GPT 변환 최대 재시도 횟수 */
 const MAX_RETRY_COUNT = 2;
+
+/** @constant {string} GPT 모델명 */
+const GPT_MODEL = 'gpt-4';
+
+/** @constant {Object} GPT API 설정 */
+const GPT_CONFIG = {
+    MAX_TOKENS: 300,
+    INITIAL_TEMPERATURE: 0.7,
+    RETRY_TEMPERATURE: 0.5
+};
 
 /**
  * 배열에서 랜덤으로 N개를 선택합니다.
@@ -24,7 +45,7 @@ function getRandomItems(array, n) {
 async function convertToEasyText(originalText) {
   // 첫 번째 시도
   let completion = await openai.chat.completions.create({
-    model: 'gpt-4',
+    model: GPT_MODEL,
     messages: buildMessages(originalText),
     max_tokens: 300,
     temperature: 0.7
@@ -45,7 +66,7 @@ async function convertToEasyText(originalText) {
     console.log(`   원본: "${easyText}"`);
 
     completion = await openai.chat.completions.create({
-      model: 'gpt-4',
+      model: GPT_MODEL,
       messages: buildRetryMessages(originalText, easyText, validation.errors),
       max_tokens: 300,
       temperature: 0.5 // 재시도 시 더 일관된 결과를 위해 낮춤
@@ -75,11 +96,66 @@ async function convertToEasyText(originalText) {
  *   - age: 대상 아이 개월수 (예: 12, 24, 36)
  *   - category: 발달 영역 (예: 언어, 인지, 사회성, 운동)
  */
-export default async function handler(req, res) {
-  // CORS 헤더 설정
-  res.setHeader('Access-Control-Allow-Origin', '*');
+/** @constant {number[]} 허용된 월령 값 */
+const ALLOWED_AGES = [12, 24, 36, 48, 60];
+
+/** @constant {string[]} 허용된 카테고리 값 */
+const ALLOWED_CATEGORIES = ['critical', 'gross_motor', 'fine_motor', 'cognition', 'language', 'social'];
+
+/** @constant {string[]} 허용된 Origin 목록 */
+const ALLOWED_ORIGINS = [
+  'http://localhost:3000',
+  'https://kanana-tori.vercel.app',
+  'https://kanana.vercel.app'
+];
+
+/**
+ * CORS 헤더를 설정합니다.
+ * @param {Object} req - 요청 객체
+ * @param {Object} res - 응답 객체
+ */
+function setCorsHeaders(req, res) {
+  const origin = req.headers.origin;
+  if (ALLOWED_ORIGINS.includes(origin) || process.env.NODE_ENV === 'development') {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  }
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Cache-Control', 's-maxage=60, stale-while-revalidate');
+}
+
+/**
+ * 입력 파라미터를 검증합니다.
+ * @param {Object} query - 쿼리 파라미터
+ * @returns {{valid: boolean, error?: string}} 검증 결과
+ */
+function validateInput(query) {
+  const { age, category, limit } = query;
+
+  if (age) {
+    const ageNum = parseInt(age, 10);
+    if (isNaN(ageNum) || !ALLOWED_AGES.includes(ageNum)) {
+      return { valid: false, error: `Invalid age. Allowed values: ${ALLOWED_AGES.join(', ')}` };
+    }
+  }
+
+  if (category && !ALLOWED_CATEGORIES.includes(category)) {
+    return { valid: false, error: `Invalid category. Allowed values: ${ALLOWED_CATEGORIES.join(', ')}` };
+  }
+
+  if (limit) {
+    const limitNum = parseInt(limit, 10);
+    if (isNaN(limitNum) || limitNum < 1 || limitNum > 10) {
+      return { valid: false, error: 'Invalid limit. Must be between 1 and 10' };
+    }
+  }
+
+  return { valid: true };
+}
+
+export default async function handler(req, res) {
+  // CORS 헤더 설정
+  setCorsHeaders(req, res);
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
@@ -93,6 +169,15 @@ export default async function handler(req, res) {
   }
 
   try {
+    // 입력 검증
+    const validation = validateInput(req.query);
+    if (!validation.valid) {
+      return res.status(400).json({
+        success: false,
+        error: validation.error
+      });
+    }
+
     const { age, category, limit } = req.query;
     const limitPerCategory = limit ? parseInt(limit, 10) : null;
 
@@ -206,7 +291,7 @@ export default async function handler(req, res) {
                   question_id: q.id,
                   original_text: q.question_text,
                   easy_text: easyText,
-                  gpt_model: 'gpt-4',
+                  gpt_model: GPT_MODEL,
                   prompt_version: PROMPT_VERSION
                 },
                 { onConflict: 'question_id,prompt_version' }

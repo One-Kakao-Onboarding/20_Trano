@@ -1,52 +1,361 @@
-// Wait for DOM to be fully loaded
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('DOM loaded!');
+/**
+ * @fileoverview 카나나 토리 - 발달장애 아동 부모를 위한 AI 발달검사 서비스
+ * @author One-Kakao-Onboarding Team
+ * @version 1.0.0
+ * @license MIT
+ *
+ * @description
+ * K-DST(한국형 발달선별검사) 기반의 발달검사를 제공하며,
+ * GPT-4를 활용해 전문 용어를 쉬운 말로 변환하고,
+ * TTS를 통해 아이에게 직접 질문을 읽어주는 기능을 제공합니다.
+ *
+ * @see {@link https://github.com/One-Kakao-Onboarding/20_Trano}
+ */
 
-    // ========== 개월수 계산 유틸리티 함수 ==========
+'use strict';
+
+// ============================================================================
+// 타입 정의 (Type Definitions)
+// ============================================================================
+
+/**
+ * 설문 질문 객체
+ * @typedef {Object} SurveyQuestion
+ * @property {string} question - 질문 텍스트
+ * @property {string} [image] - 질문에 표시할 이미지 파일명
+ * @property {string} correctAnswer - 정답 ('o' 또는 'x')
+ * @property {string} [category] - 발달 영역 카테고리
+ * @property {number} [id] - 질문 ID (DB 기준)
+ */
+
+/**
+ * 사용자 답변 객체
+ * @typedef {Object} UserAnswer
+ * @property {string} question - 질문 텍스트
+ * @property {string} userAnswer - 사용자 답변 ('o' 또는 'x')
+ * @property {string} correctAnswer - 정답
+ * @property {boolean} isCorrect - 정답 여부
+ * @property {string} [category] - 발달 영역 카테고리
+ */
+
+/**
+ * 카테고리별 점수 객체
+ * @typedef {Object} CategoryScore
+ * @property {number} yes - 'O' 답변 개수
+ * @property {number} total - 전체 질문 개수
+ */
+
+/**
+ * 검사 결과 객체
+ * @typedef {Object} AssessmentResult
+ * @property {string} type - 결과 유형 (critical, warning, normal)
+ * @property {string} title - 결과 제목
+ * @property {string} message - 결과 메시지
+ * @property {string} style - CSS 스타일 클래스
+ * @property {string[]} weakestCategories - 가장 약한 발달 영역 목록
+ */
+
+/**
+ * 아이 정보 객체
+ * @typedef {Object} ChildInfo
+ * @property {string} name - 아이 이름
+ * @property {string} birthDate - 생년월일
+ * @property {string} gender - 성별 ('male' 또는 'female')
+ * @property {number} ageInMonths - 개월수
+ */
+
+// ============================================================================
+// 커스텀 에러 클래스 (Custom Error Classes)
+// ============================================================================
+
+/**
+ * API 호출 실패 에러
+ * @extends Error
+ */
+class ApiError extends Error {
+    /**
+     * @param {string} message - 에러 메시지
+     * @param {number} [statusCode] - HTTP 상태 코드
+     */
+    constructor(message, statusCode = null) {
+        super(message);
+        this.name = 'ApiError';
+        this.statusCode = statusCode;
+    }
+}
+
+/**
+ * 유효성 검사 에러
+ * @extends Error
+ */
+class ValidationError extends Error {
+    /**
+     * @param {string} message - 에러 메시지
+     * @param {string} [field] - 문제가 있는 필드명
+     */
+    constructor(message, field = null) {
+        super(message);
+        this.name = 'ValidationError';
+        this.field = field;
+    }
+}
+
+// ============================================================================
+// 상수 정의 (Constants)
+// ============================================================================
+
+/**
+ * 발달검사 대상 월령 목록
+ * @constant {number[]}
+ */
+const TARGET_AGE_MONTHS = [12, 24, 36, 48, 60];
+
+/**
+ * 결과 유형 정의
+ * @constant {Object}
+ */
+const RESULT_TYPES = {
+    CRITICAL: 'critical',
+    WARNING: 'warning',
+    NORMAL: 'normal'
+};
+
+/**
+ * 발달 영역 카테고리 정의
+ * @constant {Object}
+ */
+const CATEGORIES = {
+    CRITICAL: 'critical',
+    GROSS_MOTOR: 'gross_motor',
+    FINE_MOTOR: 'fine_motor',
+    COGNITION: 'cognition',
+    LANGUAGE: 'language',
+    SOCIAL: 'social',
+    MOTOR: 'motor'  // gross_motor + fine_motor 통합
+};
+
+/**
+ * 카테고리별 한글 명칭
+ * @constant {Object}
+ */
+const CATEGORY_NAMES = {
+    [CATEGORIES.CRITICAL]: '핵심 발달 지표',
+    [CATEGORIES.GROSS_MOTOR]: '대근육 운동',
+    [CATEGORIES.FINE_MOTOR]: '소근육 운동',
+    [CATEGORIES.COGNITION]: '인지',
+    [CATEGORIES.LANGUAGE]: '언어',
+    [CATEGORIES.SOCIAL]: '사회성'
+};
+
+/**
+ * 카테고리별 피드백 문구
+ * @constant {Object}
+ */
+const CATEGORY_PHRASES = {
+    [CATEGORIES.MOTOR]: '몸을 움직이는 것',
+    [CATEGORIES.COGNITION]: '생각하는 것',
+    [CATEGORIES.LANGUAGE]: '말하는 것',
+    [CATEGORIES.SOCIAL]: '친구들과 노는 것'
+};
+
+/**
+ * TTS 설정
+ * @constant {Object}
+ */
+const TTS_CONFIG = {
+    LANG: 'ko-KR',
+    RATE: 0.9,
+    PITCH: 1.0,
+    VOLUME: 1.0
+};
+
+/**
+ * 결과 판단 기준
+ * @constant {Object}
+ */
+const RESULT_THRESHOLDS = {
+    WARNING_MAX_YES: 5,  // O가 5개 이하면 주의
+    NORMAL_MIN_YES: 6    // O가 6개 이상이면 안심
+};
+
+// ============================================================================
+// 애플리케이션 초기화
+// ============================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 앱 초기화
+
+    // ========================================================================
+    // 유틸리티 함수 (Utility Functions)
+    // ========================================================================
 
     /**
-     * 생년월일로부터 현재 개월수 계산
+     * 생년월일로부터 현재 개월수를 계산합니다.
+     * @param {string|Date} birthDate - 생년월일
+     * @returns {number} 개월수
      */
     function calculateAgeInMonths(birthDate) {
         const today = new Date();
         const birth = new Date(birthDate);
         const months = (today.getFullYear() - birth.getFullYear()) * 12
                      + (today.getMonth() - birth.getMonth());
-        return months;
+        return Math.max(0, months);
     }
 
     /**
-     * 개월수를 DB에 저장된 가장 가까운 낮은 값으로 매핑
-     * (12, 24, 36, 48, 60개월)
+     * 개월수를 DB에 저장된 가장 가까운 낮은 값으로 매핑합니다.
+     * @param {number} months - 개월수
+     * @returns {number} 매핑된 월령 (12, 24, 36, 48, 60)
      */
     function mapToTargetAge(months) {
-        if (months >= 60) return 60;
-        if (months >= 48) return 48;
-        if (months >= 36) return 36;
-        if (months >= 24) return 24;
-        return 12;
+        for (let i = TARGET_AGE_MONTHS.length - 1; i >= 0; i--) {
+            if (months >= TARGET_AGE_MONTHS[i]) {
+                return TARGET_AGE_MONTHS[i];
+            }
+        }
+        return TARGET_AGE_MONTHS[0];
+    }
+
+    // ========================================================================
+    // 입력 유효성 검증 함수 (Input Validation)
+    // ========================================================================
+
+    /**
+     * 아이 이름을 검증합니다.
+     * @param {string} name - 아이 이름
+     * @returns {{valid: boolean, error?: string}} 검증 결과
+     */
+    function validateChildName(name) {
+        if (!name || typeof name !== 'string') {
+            return { valid: false, error: '이름을 입력해주세요.' };
+        }
+        const trimmedName = name.trim();
+        if (trimmedName.length < 1) {
+            return { valid: false, error: '이름을 입력해주세요.' };
+        }
+        if (trimmedName.length > 20) {
+            return { valid: false, error: '이름은 20자 이내로 입력해주세요.' };
+        }
+        // XSS 방지를 위한 특수문자 검사
+        const invalidChars = /[<>\"\'&]/;
+        if (invalidChars.test(trimmedName)) {
+            return { valid: false, error: '이름에 특수문자를 사용할 수 없습니다.' };
+        }
+        return { valid: true };
     }
 
     /**
-     * API에서 쉬운 말로 변환된 질문 가져오기
+     * 생년월일을 검증합니다.
+     * @param {string} birthDate - 생년월일 (YYYY-MM-DD 형식)
+     * @returns {{valid: boolean, error?: string}} 검증 결과
      */
-    async function fetchEasyQuestions(targetAge, limitPerCategory = 2) {
-        const response = await fetch(`/api/questions/easy?age=${targetAge}&limit=${limitPerCategory}`);
-        if (!response.ok) {
-            throw new Error('질문을 불러오는데 실패했습니다.');
+    function validateBirthDate(birthDate) {
+        if (!birthDate) {
+            return { valid: false, error: '생년월일을 입력해주세요.' };
         }
-        const result = await response.json();
-        if (!result.success) {
-            throw new Error(result.error || '질문을 불러오는데 실패했습니다.');
+
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(birthDate)) {
+            return { valid: false, error: '올바른 날짜 형식이 아닙니다.' };
         }
-        return result.data;
+
+        const birth = new Date(birthDate);
+        const today = new Date();
+
+        if (isNaN(birth.getTime())) {
+            return { valid: false, error: '유효하지 않은 날짜입니다.' };
+        }
+
+        if (birth > today) {
+            return { valid: false, error: '미래 날짜는 입력할 수 없습니다.' };
+        }
+
+        // 최대 10년 전까지만 허용
+        const tenYearsAgo = new Date();
+        tenYearsAgo.setFullYear(today.getFullYear() - 10);
+        if (birth < tenYearsAgo) {
+            return { valid: false, error: '10세 이하의 아이만 검사할 수 있습니다.' };
+        }
+
+        return { valid: true };
     }
 
-    // Page navigation elements
+    /**
+     * 성별을 검증합니다.
+     * @param {string} gender - 성별 ('male' 또는 'female')
+     * @returns {{valid: boolean, error?: string}} 검증 결과
+     */
+    function validateGender(gender) {
+        if (!gender) {
+            return { valid: false, error: '성별을 선택해주세요.' };
+        }
+        if (gender !== 'male' && gender !== 'female') {
+            return { valid: false, error: '올바른 성별을 선택해주세요.' };
+        }
+        return { valid: true };
+    }
+
+    /**
+     * 모든 아이 정보를 검증합니다.
+     * @param {string} name - 아이 이름
+     * @param {string} birthDate - 생년월일
+     * @param {string} gender - 성별
+     * @returns {{valid: boolean, error?: string}} 검증 결과
+     */
+    function validateChildInfo(name, birthDate, gender) {
+        const nameValidation = validateChildName(name);
+        if (!nameValidation.valid) return nameValidation;
+
+        const birthValidation = validateBirthDate(birthDate);
+        if (!birthValidation.valid) return birthValidation;
+
+        const genderValidation = validateGender(gender);
+        if (!genderValidation.valid) return genderValidation;
+
+        return { valid: true };
+    }
+
+    /**
+     * API에서 쉬운 말로 변환된 질문을 가져옵니다.
+     * @param {number} targetAge - 대상 월령
+     * @param {number} [limitPerCategory=2] - 카테고리당 질문 수
+     * @returns {Promise<Array>} 질문 목록
+     * @throws {Error} API 호출 실패 시
+     */
+    async function fetchEasyQuestions(targetAge, limitPerCategory = 2) {
+        try {
+            const response = await fetch(`/api/questions/easy?age=${targetAge}&limit=${limitPerCategory}`);
+
+            if (!response.ok) {
+                throw new Error(`HTTP 오류: ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (!result.success) {
+                throw new Error(result.error || '알 수 없는 오류');
+            }
+
+            return result.data;
+        } catch (error) {
+            console.error('❌ 질문 로드 실패:', error);
+            throw new Error('질문을 불러오는데 실패했습니다.');
+        }
+    }
+
+    // ========================================================================
+    // DOM 요소 참조 (DOM Element References)
+    // ========================================================================
+
+    /** @type {HTMLElement} 랜딩 페이지 */
     const landingPage = document.getElementById('landing-page');
+    /** @type {HTMLElement} 채팅방 페이지 */
     const chatRoomPage = document.getElementById('chat-room-page');
+    /** @type {HTMLElement} 부모 설문 안내 페이지 */
     const parentSurveyIntroPage = document.getElementById('parent-survey-intro-page');
+    /** @type {HTMLElement} 설문 페이지 */
     const surveyPage = document.getElementById('survey-page');
+    /** @type {HTMLElement} 결과 페이지 */
     const resultPage = document.getElementById('result-page');
     const infoPage = document.getElementById('info-page'); // 추가됨
 
@@ -91,42 +400,54 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // ========== Survey Logic ==========
+    // ========================================================================
+    // 설문 데이터 (Survey Data)
+    // ========================================================================
 
-    // 기본 설문 질문 (원본 - 변경 금지)
+    /**
+     * 부모 발달 이해도 검사를 위한 기본 설문 질문
+     * @constant {SurveyQuestion[]}
+     */
     const BASIC_SURVEY_QUESTIONS = [
         {
             question: '친구가 많은 당신! "발이 넓다!"라는 말을 들었다면 말 그대로 발이 정말로 큰 걸까요?',
-            image: 'bigfoot.png',
+            image: 'assets/images/survey/bigfoot.png',
             correctAnswer: 'x'
         },
         {
             question: '약속에 늦은 당신 ㅜㅜ! 친구가 "참~ 일찍도 온다!" 라고 말했다면 칭찬받아 기쁠까요?',
-            image: 'late.png',
+            image: 'assets/images/survey/late.png',
             correctAnswer: 'x'
         },
         {
             question: '1000원을 가진 당신! 물건이 비싸진다면 결국 내가 살 수 있는 물건의 개수는 줄어들까요?',
-            image: '1000.png',
+            image: 'assets/images/survey/1000.png',
             correctAnswer: 'o'
         },
         {
             question: '민주주의라는 말의 뜻을 다른 사람에게 설명할 수 있나요?',
-            image: 'demo.png',
+            image: 'assets/images/survey/demo.png',
             correctAnswer: 'o'
         }
     ];
 
-    // 현재 활성 설문 질문 (동적으로 변경됨)
+    // ========================================================================
+    // 설문 상태 관리 (Survey State)
+    // ========================================================================
+
+    /** @type {SurveyQuestion[]} 현재 활성 설문 질문 (동적으로 변경됨) */
     let surveyQuestions = [...BASIC_SURVEY_QUESTIONS];
 
-    // 현재 설문 타입 ('basic' = 기존 4문항, 'developmental' = 발달검사 10문항)
+    /** @type {'basic'|'developmental'} 현재 설문 타입 */
     let surveyType = 'basic';
 
+    /** @type {number} 현재 질문 인덱스 */
     let currentQuestionIndex = 0;
+
+    /** @type {UserAnswer[]} 사용자 답변 목록 */
     let userAnswers = [];
 
-    // TTS 발현 여부 (부모 설문 결과에 따라 결정)
+    /** @type {boolean} TTS 활성화 여부 (부모 설문 결과에 따라 결정) */
     let enableTTS = false;
 
     /**
@@ -158,21 +479,24 @@ document.addEventListener('DOMContentLoaded', () => {
             if (pattern.length === wrongCount) {
                 const isMatch = pattern.every(q => wrongSet.has(q));
                 if (isMatch) {
-                    console.log(`✅ TTS 발현 조건 충족: 문항 ${pattern.join(', ')} 오답`);
                     return true;
                 }
             }
         }
 
-        console.log(`❌ TTS 발현 조건 미충족: 오답 문항 ${wrongQuestions.join(', ')}`);
         return false;
     }
 
-    // 현재 실행 중인 TTS 제어 변수
+    // ========================================================================
+    // TTS (Text-to-Speech) 관련 함수
+    // ========================================================================
+
+    /** @type {{abort: boolean}|null} 현재 실행 중인 TTS 제어 객체 */
     let currentTTSController = null;
 
     /**
      * TTS를 완전히 중지하는 함수
+     * @returns {void}
      */
     function stopTTS() {
         // 컨트롤러가 있으면 중단
@@ -188,7 +512,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // 토리 애니메이션 중지
         toggleToriSpeakingAnimation(false);
 
-        console.log('✋ TTS 중지됨');
     }
 
     /**
@@ -226,9 +549,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 utterance.volume = 1.0; // 볼륨 (0 ~ 1)
 
                 utterance.onend = () => {
-                    if (!controller.abort) {
-                        console.log('TTS 완료');
-                    }
                     resolve();
                 };
 
@@ -331,7 +651,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 카테고리별 제품 추천 데이터 (result.md 기반)
+    // ========================================================================
+    // 제품 추천 데이터 (Product Recommendations)
+    // ========================================================================
+
+    /**
+     * 카테고리별 제품 추천 데이터
+     * 발달 영역에 따라 적합한 교육/놀이 용품을 추천합니다.
+     * @constant {Object.<string, Array<{name: string, link: string, image: string}>>}
+     */
     const productRecommendations = {
         'motor': [
             { name: '컵쌓기', link: 'https://kko.to/cSmxh_Z687', image: 'https://st.kakaocdn.net/product/gift/product/20220826170316_ccf540dab12d438b88a1a50ba28220d4.jpg' },
@@ -354,13 +682,28 @@ document.addEventListener('DOMContentLoaded', () => {
         ]
     };
 
+    // ========================================================================
+    // 설문 UI 요소 참조 (Survey UI Elements)
+    // ========================================================================
+
+    /** @type {HTMLElement} 설문 시작 트리거 */
     const startSurveyTrigger = document.getElementById('start-survey-trigger');
+    /** @type {HTMLElement} 질문 텍스트 표시 영역 */
     const questionText = document.getElementById('question-text');
+    /** @type {HTMLImageElement} 질문 이미지 표시 영역 */
     const questionImage = document.getElementById('question-image');
+    /** @type {HTMLButtonElement} 아니요 버튼 */
     const xBtn = document.getElementById('x-btn');
+    /** @type {HTMLButtonElement} 네 버튼 */
     const oBtn = document.getElementById('o-btn');
+    /** @type {HTMLElement} 진행 상태 텍스트 */
     const progressText = document.getElementById('progress-text');
+    /** @type {HTMLButtonElement} 이전 버튼 */
     const prevBtn = document.getElementById('prev-btn');
+
+    // ========================================================================
+    // 설문 이벤트 핸들러 (Survey Event Handlers)
+    // ========================================================================
 
     if (startSurveyTrigger) {
         startSurveyTrigger.addEventListener('click', () => {
@@ -376,6 +719,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ========================================================================
+    // 설문 핵심 함수 (Survey Core Functions)
+    // ========================================================================
+
+    /**
+     * 설문을 시작하고 첫 번째 질문을 표시합니다.
+     * @returns {void}
+     */
     function startSurvey() {
         surveyType = 'basic';  // 기본 설문 타입 설정
         surveyQuestions = [...BASIC_SURVEY_QUESTIONS];  // 기본 질문으로 복원
@@ -479,7 +830,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Critical 질문에 X(아니요) 답변이 나오면 즉시 결과 페이지로 이동
             if (currentQuestion.category === 'critical' && answer === 'x') {
-                console.log('⚠️ Critical 질문에 X 답변 - 즉시 결과 페이지로 이동');
+                // Critical 질문에 X 답변 - 즉시 결과 페이지로 이동
                 showResults();
                 return;
             }
@@ -526,7 +877,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // 결과 출력 (기본 설문 / 발달 검사 분기)
+    // ========================================================================
+    // 결과 표시 함수 (Result Display Functions)
+    // ========================================================================
+
+    /**
+     * 설문 결과를 계산하고 화면에 표시합니다.
+     * 기본 설문 완료 시 아이 정보 입력 페이지로,
+     * 발달 검사 완료 시 결과 페이지로 이동합니다.
+     * @returns {void}
+     */
     function showResults() {
         // 결과 페이지 표시 전 TTS 중지
         if (enableTTS && surveyType === 'developmental') {
@@ -605,13 +965,11 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (answer.category === 'gross_motor' || answer.category === 'fine_motor') {
                         mappedCategory = 'motor';
                     }
-                    console.log('답변 카테고리:', answer.category, '→', mappedCategory, '응답:', answer.userAnswer);
                     if (categoryScores[mappedCategory]) {
                         categoryScores[mappedCategory].total++;
                         if (answer.userAnswer === 'o') categoryScores[mappedCategory].yes++;
                     }
                 });
-                console.log('카테고리별 점수:', categoryScores);
 
                 // 가장 낮은 카테고리 찾기 (2-pass: 같은 비율의 모든 카테고리 수집)
                 let lowestRatio = 1;
@@ -644,7 +1002,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     'social': '친구들과 노는 것'
                 };
 
-                console.log('가장 약한 카테고리:', weakestCategories, '비율:', lowestRatio);
 
                 // 메시지 생성
                 if (weakestCategories.length === 1) {
@@ -910,12 +1267,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             try {
                 const apiUrl = `/api/og-image?url=${encodeURIComponent(link)}`;
-                console.log('OG 이미지 요청:', apiUrl);
 
                 const response = await fetch(apiUrl);
                 const data = await response.json();
 
-                console.log('OG 이미지 응답:', data);
 
                 if (data.success && data.ogImage) {
                     wrapper.innerHTML = `<img src="${data.ogImage}" alt="상품 이미지" class="product-image">`;
@@ -923,7 +1278,6 @@ document.addEventListener('DOMContentLoaded', () => {
                     wrapper.innerHTML = `<div class="product-no-image">이미지 없음</div>`;
                 }
             } catch (error) {
-                console.warn('OG 이미지 로드 실패:', link, error);
                 wrapper.innerHTML = `<div class="product-no-image">로드 실패</div>`;
             }
         }
@@ -967,7 +1321,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ========== Info Page Logic ==========
+    // ========================================================================
+    // 아이 정보 입력 페이지 (Child Info Page)
+    // ========================================================================
 
     // 결과 페이지에서 수동으로 이동하고 싶을 때 사용
     if (goToInfoBtn) {
@@ -986,7 +1342,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // 커스텀 모달 표시 함수
+    // ========================================================================
+    // 모달 및 UI 유틸리티 (Modal & UI Utilities)
+    // ========================================================================
+
+    /**
+     * 커스텀 모달을 표시합니다.
+     * @param {string} message - 모달에 표시할 메시지
+     * @param {Function} [callback] - 모달 닫기 후 실행할 콜백
+     * @returns {void}
+     */
     function showModal(message, callback) {
         modalMessage.textContent = message;
         customModal.style.display = 'flex';
@@ -1002,15 +1367,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const name = document.getElementById('child-name').value;
             const birth = document.getElementById('child-birth').value;
 
-            if (!name || !birth || !selectedGender) {
-                showModal('모든 정보를 입력해주세요!');
+            // 입력 유효성 검증
+            const validation = validateChildInfo(name, birth, selectedGender);
+            if (!validation.valid) {
+                showModal(validation.error);
                 return;
             }
 
             // 1. 개월수 계산
             const ageInMonths = calculateAgeInMonths(birth);
             const targetAge = mapToTargetAge(ageInMonths);
-            console.log(`아이 나이: ${ageInMonths}개월 → 검사 대상: ${targetAge}개월`);
 
             // 2. 등록 완료 모달 표시
             showModal(`${name} 어린이의 발달 검사를 시작합니다!`, async () => {
@@ -1024,9 +1390,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 try {
                     // 4. API 호출 (GPT 변환 포함)
-                    console.log('질문 로딩 중...');
+                    // API 호출하여 질문 로드
                     const questions = await fetchEasyQuestions(targetAge, 2);
-                    console.log(`${questions.length}개 질문 로드 완료`);
 
                     // 5. 설문 타입 및 데이터 설정
                     surveyType = 'developmental';

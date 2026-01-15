@@ -22,7 +22,10 @@
       "Bash(git merge:*)",
       "Bash(git push:*)",
       "Bash(chmod:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(vercel link:*)",
+      "Bash(git stash show:*)",
+      "Bash(vercel env pull:*)"
     ]
   }
 }
