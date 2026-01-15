@@ -540,8 +540,11 @@ body {
 }
 
 .survey-header {
-    padding: 60px 0 20px;
+    position: relative;
+    padding: 60px 0 10px;
     text-align: center;
+    min-height: 50px;
+    flex-shrink: 0;
 }
 
 .tori-face-small {
@@ -552,6 +555,17 @@ body {
     overflow: hidden;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
     background: white;
+}
+
+.survey-tori-face {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto;
+    border-radius: 50%;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    background: white;
+    display: none;
 }
 
 .tori-face-img {
@@ -568,6 +582,7 @@ body {
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px;
     position: relative;
+    flex-shrink: 0;
 }
 
 .question-bubble::before {
@@ -591,6 +606,20 @@ body {
     font-weight: 600;
 }
 
+/* 토리 이미지 없을 때 더 큰 텍스트 */
+.question-bubble-large {
+    min-height: 150px;
+    padding: 30px 25px;
+    display: block;
+    overflow-wrap: break-word;
+    word-break: keep-all;
+}
+
+.question-bubble-large .question-text {
+    font-size: 22px;
+    line-height: 1.7;
+}
+
 .question-image-container {
     flex: 1;
     display: flex;
@@ -612,6 +641,8 @@ body {
     display: flex;
     gap: 15px;
     padding: 20px 0;
+    flex-shrink: 0;
+    margin-top: auto;
 }
 
 .answer-btn {
@@ -666,12 +697,37 @@ body {
 .progress-indicator {
     text-align: center;
     padding: 10px 0;
+    flex-shrink: 0;
 }
 
 #progress-text {
     font-size: 14px;
     font-weight: 600;
     color: #666;
+}
+
+.prev-btn {
+    position: absolute;
+    top: 5px;
+    left: 15px;
+    width: 36px;
+    height: 36px;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    border-radius: 50%;
+    font-size: 24px;
+    font-weight: 300;
+    color: #666;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.prev-btn:hover {
+    background: #f0f0f0;
 }
 
 /* ========== Result Page ========== */

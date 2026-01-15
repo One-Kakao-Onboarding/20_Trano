@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const BASIC_SURVEY_QUESTIONS = [
         {
             question: '친구가 많은 당신! "발이 넓다!"라는 말을 들었다면 말 그대로 발이 정말로 큰 걸까요?',
-            image: 'big foot.png',
+            image: 'bigfoot.png',
             correctAnswer: 'x'
         },
         {
@@ -130,6 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const xBtn = document.getElementById('x-btn');
     const oBtn = document.getElementById('o-btn');
     const progressText = document.getElementById('progress-text');
+    const prevBtn = document.getElementById('prev-btn');
 
     if (startSurveyTrigger) {
         startSurveyTrigger.addEventListener('click', () => {
@@ -160,7 +161,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 questionImage.style.display = 'none';
             }
         }
+
+        // 발달검사일 때만 토리 이미지 표시
+        const surveyTori = document.getElementById('survey-tori');
+        if (surveyTori) {
+            surveyTori.style.display = surveyType === 'developmental' ? 'block' : 'none';
+        }
+
         progressText.textContent = `${index + 1} / ${surveyQuestions.length}`;
+        updatePrevButtonVisibility();
+    }
+
+    // 뒤로가기 버튼 표시/숨김
+    function updatePrevButtonVisibility() {
+        if (prevBtn) {
+            prevBtn.style.display = currentQuestionIndex > 0 ? 'inline-block' : 'none';
+        }
+    }
+
+    // 이전 질문으로 이동
+    function goToPreviousQuestion() {
+        if (currentQuestionIndex > 0) {
+            currentQuestionIndex--;
+            userAnswers.pop();  // 마지막 답변 제거
+            showQuestion(currentQuestionIndex);
+        }
     }
 
     function answerQuestion(answer) {
@@ -282,6 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (xBtn) xBtn.addEventListener('click', () => answerQuestion('x'));
     if (oBtn) oBtn.addEventListener('click', () => answerQuestion('o'));
+    if (prevBtn) prevBtn.addEventListener('click', goToPreviousQuestion);
 
     if (restartBtn) {
         restartBtn.addEventListener('click', () => {

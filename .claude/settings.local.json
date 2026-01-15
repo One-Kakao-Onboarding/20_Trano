@@ -13,7 +13,11 @@
       "Bash(npm start)",
       "Bash(lsof:*)",
       "Bash(xargs kill -9)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(vercel --prod:*)",
+      "Bash(vercel deploy:*)",
+      "Bash(vercel project:*)",
+      "Bash(vercel ls:*)"
     ]
   }
 }
