@@ -543,7 +543,7 @@ body {
     position: relative;
     padding: 60px 0 10px;
     text-align: center;
-    min-height: 50px;
+    min-height: 80px;
     flex-shrink: 0;
 }
 
@@ -558,14 +558,31 @@ body {
 }
 
 .survey-tori-face {
-    width: 70px;
-    height: 70px;
+    width: 140px;
+    height: 140px;
     margin: 0 auto;
     border-radius: 50%;
     overflow: hidden;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
     background: white;
     display: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* 토리가 말할 때 애니메이션 */
+.survey-tori-face.speaking {
+    animation: toriSpeaking 0.8s ease-in-out infinite;
+}
+
+@keyframes toriSpeaking {
+    0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 6px 25px rgba(255, 183, 77, 0.4);
+    }
 }
 
 .tori-face-img {
@@ -606,18 +623,39 @@ body {
     font-weight: 600;
 }
 
-/* 토리 이미지 없을 때 더 큰 텍스트 */
+/* 발달 검사용 말풍선 (토리 이미지 있을 때) */
 .question-bubble-large {
-    min-height: 150px;
-    padding: 30px 25px;
-    display: block;
+    height: 280px;
+    padding: 40px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     overflow-wrap: break-word;
     word-break: keep-all;
+    overflow-y: auto;
+    position: relative;
+    margin-top: 15px;
+    margin-bottom: 20px;
+}
+
+/* 발달 검사용 말풍선 삼각형 (위쪽 중앙) */
+.question-bubble-large::before {
+    content: '';
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 20px solid transparent;
+    border-right: 20px solid transparent;
+    border-bottom: 20px solid white;
+    z-index: 10;
 }
 
 .question-bubble-large .question-text {
-    font-size: 22px;
-    line-height: 1.7;
+    font-size: 26px;
+    line-height: 1.8;
 }
 
 /* 부모 설문용 큰 말풍선 (텍스트 + 이미지 포함) */

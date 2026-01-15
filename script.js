@@ -124,6 +124,124 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentQuestionIndex = 0;
     let userAnswers = [];
 
+    // TTS 발현 여부 (부모 설문 결과에 따라 결정)
+    let enableTTS = false;
+
+    /**
+     * 부모 설문 결과를 기반으로 TTS 발현 여부 판단
+     * @param {Array} answers - userAnswers 배열
+     * @returns {boolean} - TTS 발현 여부
+     */
+    function shouldEnableTTS(answers) {
+        // 오답 문항 번호 추출 (1-based index)
+        const wrongQuestions = answers
+            .map((answer, index) => (!answer.isCorrect ? index + 1 : null))
+            .filter(q => q !== null);
+
+        const wrongSet = new Set(wrongQuestions);
+        const wrongCount = wrongQuestions.length;
+
+        // TTS 발현 조건 체크
+        const ttsPatterns = [
+            // 2개 틀림
+            [1, 3], [1, 4], [2, 3], [2, 4],
+            // 3개 틀림
+            [1, 2, 3], [1, 2, 4], [1, 3, 4], [2, 3, 4],
+            // 4개 틀림
+            [1, 2, 3, 4]
+        ];
+
+        // 패턴 매칭
+        for (const pattern of ttsPatterns) {
+            if (pattern.length === wrongCount) {
+                const isMatch = pattern.every(q => wrongSet.has(q));
+                if (isMatch) {
+                    console.log(`✅ TTS 발현 조건 충족: 문항 ${pattern.join(', ')} 오답`);
+                    return true;
+                }
+            }
+        }
+
+        console.log(`❌ TTS 발현 조건 미충족: 오답 문항 ${wrongQuestions.join(', ')}`);
+        return false;
+    }
+
+    /**
+     * TTS로 텍스트를 읽어주는 함수
+     * @param {string} text - 읽어줄 텍스트
+     * @returns {Promise} - TTS 완료를 알리는 Promise
+     */
+    function speakText(text) {
+        return new Promise((resolve, reject) => {
+            if (!('speechSynthesis' in window)) {
+                console.warn('TTS not supported');
+                resolve();
+                return;
+            }
+
+            // 기존 음성 중지
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ko-KR';
+            utterance.rate = 0.9; // 읽는 속도 (0.1 ~ 10)
+            utterance.pitch = 1.0; // 음높이 (0 ~ 2)
+            utterance.volume = 1.0; // 볼륨 (0 ~ 1)
+
+            utterance.onend = () => {
+                console.log('TTS 완료');
+                resolve();
+            };
+
+            utterance.onerror = (event) => {
+                console.error('TTS 에러:', event);
+                resolve(); // 에러가 나도 계속 진행
+            };
+
+            window.speechSynthesis.speak(utterance);
+        });
+    }
+
+    /**
+     * 토리 이미지에 말하는 애니메이션 추가/제거
+     * @param {boolean} isActive - 애니메이션 활성화 여부
+     */
+    function toggleToriSpeakingAnimation(isActive) {
+        const surveyTori = document.getElementById('survey-tori');
+        if (surveyTori) {
+            if (isActive) {
+                surveyTori.classList.add('speaking');
+            } else {
+                surveyTori.classList.remove('speaking');
+            }
+        }
+    }
+
+    /**
+     * 아이 설문 질문을 TTS로 읽어주는 함수
+     * @param {string} questionText - 질문 텍스트
+     */
+    async function readQuestionWithTTS(questionText) {
+        if (!enableTTS) return;
+
+        try {
+            // 토리 애니메이션 시작
+            toggleToriSpeakingAnimation(true);
+
+            // 질문 텍스트 읽기
+            await speakText(questionText);
+
+            // 버튼 안내 멘트 읽기
+            await speakText('아니오 버튼은 왼쪽, 네 버튼은 오른쪽에 있습니다');
+
+            // 토리 애니메이션 종료
+            toggleToriSpeakingAnimation(false);
+        } catch (error) {
+            console.error('TTS 실행 중 오류:', error);
+            toggleToriSpeakingAnimation(false);
+        }
+    }
+
     // 카테고리별 제품 추천 데이터 (result.md 기반)
     const productRecommendations = {
         'motor': [
@@ -206,6 +324,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
         progressText.textContent = `${index + 1} / ${surveyQuestions.length}`;
         updatePrevButtonVisibility();
+
+        // 발달검사일 때 TTS 실행
+        if (surveyType === 'developmental' && enableTTS) {
+            // 약간의 딜레이 후 TTS 시작 (화면 전환 후)
+            setTimeout(() => {
+                readQuestionWithTTS(question.question);
+            }, 300);
+        }
     }
 
     // 뒤로가기 버튼 표시/숨김
@@ -226,6 +352,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function answerQuestion(answer) {
         const currentQuestion = surveyQuestions[currentQuestionIndex];
+
+        // 답변 시 TTS 중지
+        if (enableTTS && surveyType === 'developmental') {
+            window.speechSynthesis.cancel();
+            toggleToriSpeakingAnimation(false);
+        }
 
         if (surveyType === 'basic') {
             // 기본 설문: 정답/오답 기록
@@ -300,6 +432,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (surveyType === 'basic') {
             // 기본 설문: 정답/오답 표시
             const correctCount = userAnswers.filter(a => a.isCorrect).length;
+
+            // TTS 발현 여부 판단 및 저장
+            enableTTS = shouldEnableTTS(userAnswers);
 
             // 결과 제목 표시 (기본)
             const resultTitleElement = document.querySelector('.result-title');
